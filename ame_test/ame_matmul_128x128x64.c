@@ -60,7 +60,7 @@ int main(void) {
     init_matrices();
     //memset(C, 0, sizeof(C));
     //compute_reference();
-
+    printf("init\n");
     // --- AME single-tile GEMM ---
     uint64_t a_stride = APPLICATION_K * sizeof(int8_t);   // 64 bytes per row
     uint64_t b_stride = APPLICATION_K * sizeof(int8_t);   // 64 bytes per row

@@ -225,7 +225,7 @@
 // fence.m: RoCC CUSTOM1, funct=0x70, no GPR operands, no writeback
 #define AME_FENCE_M_ENC  ROCC_BIT(0x2B, 0, 0, 0, 0, 0, 0, 0x70)
 // mstatus: RoCC CUSTOM1, funct=0x71, xd=1 (writes rd), rd=t0(5)
-#define AME_MSTATUS_ENC  ROCC_BIT(0x2B, GPR_T0, 0, 0, 1, 0, 0, 0x71)
+#define AME_MSTATUS_ENC  ROCC_BIT(0x2B, GPR_T0, 1, 1, 1, 6, 7, 0x71)
 
 // ============================================================
 // High-level API functions
@@ -280,21 +280,53 @@ static inline void ame_fence(void) {
     __asm__ __volatile__(".word " GET_VALUE(AME_FENCE_M_ENC) "\n\t" ::: "memory");
 }
 
+// Status query (non-blocking): returns pipeline status word.
+//   bit[0]: load_fifo_full
+//   bit[1]: compute_fifo_full
+//   bit[2]: store_fifo_full
+//   bit[3]: busy (any operation in flight)
+//   bit[4]: all_idle (1 = all complete, safe to read results)
+// Software can poll (ame_status() >> 4) & 1 to check completion without blocking.
 static inline uint64_t ame_status(void) {
     uint64_t res;
     __asm__ __volatile__(
+        "sd t0, -8(sp)\n\t"
         ".word " GET_VALUE(AME_MSTATUS_ENC) "\n\t"
-        "mv %0, t0\n\t"
+        "add %0, zero, t0\n\t"
+        "ld t0, -8(sp)\n\t"
         : "=r"(res)
         :
         : "t0", "memory"
     );
     return res;
 }
+#define YGJK_INS_RRR(rd, rs1, rs2)                      \ 
+{                                                           \
+    __asm__ __volatile__ (                                  \
+        "sd t0, -24(sp)\n\t"                                \
+        "sd t1, -16(sp)\n\t"                                    \
+        "sd t2,  -8(sp)\n\t"                                    \
+        "add t1, zero, %1\n\t"                                  \
+        "add t2, zero, %2\n\t"                                  \
+        ".word " GET_VALUE(AME_MSTATUS_ENC) "\n\t"              \
+        "add %0, zero, t0\n\t"                                  \
+        "ld t0, -24(sp)\n\t"                                    \
+        "ld t1, -16(sp)\n\t"                                    \
+        "ld t2,  -8(sp)\n\t"                                    \
+        :"=r"(rd)                                           \
+        :"r" (rs1) , "r" (rs2)                              \
+        :"t0","t1","t2","memory"                                     \
+        );                                                  \
+}
+// Non-blocking completion check
+static inline int ame_is_idle(void) {
+    return (ame_status() >> 4) & 1;
+}
 
-
-uint64_t ame_is_idle()
+uint64_t cute_inst_fifo_finish_search()
 {
-    return ame_status();
+    uint64_t res1=1;
+    YGJK_INS_RRR(res1, 0, 0);
+    return res1;
 }
 #endif // AME_H
