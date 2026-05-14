@@ -126,13 +126,13 @@ void issue_cute_config_CONV(uint64_t element_type,uint64_t bias_type,uint64_t tr
     conv_stride = conv_stride & 0xFF;
     conv_oh_max = conv_oh_max & 0x7FFF;
     conv_ow_max = conv_ow_max & 0x7FFF;
-    kernel_size = kernel_size & 0xF;
-    conv_oh_per_add = conv_oh_per_add & 0x7FFF;
-    conv_ow_per_add = conv_ow_per_add & 0x7FFF;
-    conv_oh_index = conv_oh_index & 0x7FFF;
-    conv_ow_index = conv_ow_index & 0x7FFF;
+    kernel_size = kernel_size & 0xFF;
+    conv_oh_per_add = conv_oh_per_add & 0x3FF;
+    conv_ow_per_add = conv_ow_per_add & 0x3FF;
+    conv_oh_index = conv_oh_index & 0x3FF;
+    conv_ow_index = conv_ow_index & 0x3FF;
     uint64_t cfgData1 = element_type | (bias_type << 8) | (transpose_result << 16) | (conv_stride << 24) | (conv_oh_max << 32) | (conv_ow_max << 48);
-    uint64_t cfgData2 = kernel_size  | (conv_oh_per_add << 4) | (conv_ow_per_add << 19) | (conv_oh_index << 34) | (conv_ow_index << 49);
+    uint64_t cfgData2 = kernel_size  | (conv_oh_per_add << 16) | (conv_ow_per_add << 26) | (conv_oh_index << 36) | (conv_ow_index << 46);
     YGJK_INS_XRR(0, cfgData1, cfgData2, CUTE_CONV_CONFIG_FUNCTOPS);
 }
 
@@ -150,7 +150,7 @@ void issue_cute_config_MatMul(uint64_t element_type,uint64_t bias_type,uint64_t 
     uint64_t conv_oh_index = 0;
     uint64_t conv_ow_index = current_M_index;
     uint64_t cfgData1 = element_type | (bias_type << 8) | (transpose_result << 16) | (conv_stride << 24) | (conv_oh_max << 32) | (conv_ow_max << 48);
-    uint64_t cfgData2 = kernel_size  | (conv_oh_per_add << 4) | (conv_ow_per_add << 19) | (conv_oh_index << 34) | (conv_ow_index << 49);
+    uint64_t cfgData2 = kernel_size  | (conv_oh_per_add << 16) | (conv_ow_per_add << 26) | (conv_oh_index << 36) | (conv_ow_index << 46);
     YGJK_INS_XRR(0, cfgData1, cfgData2, CUTE_CONV_CONFIG_FUNCTOPS);
 }
 
