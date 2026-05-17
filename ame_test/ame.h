@@ -248,30 +248,34 @@ static inline void ame_release(void) {
     AME_ISSUE(AME_MRELEASE());
 }
 
-// Load A (8-bit) into tr0: base in t1, stride in t2
-static inline void ame_mlae8(uint64_t base_addr, uint64_t stride) {
-    AME_ISSUE_WITH_GPR(AME_MLAE(ESIZE_8, TR0, GPR_T1, GPR_T2), base_addr, stride);
-}
+// ============================================================
+// High-level API: register-parameterized macros
+// tr_reg: TR0/TR1/TR2/TR3  acc_reg: ACC0/ACC1/ACC2/ACC3
+// All register arguments must be compile-time constants (#define values).
+// ============================================================
 
-// Load B (8-bit) into tr2: base in t1, stride in t2
-static inline void ame_mlbe8(uint64_t base_addr, uint64_t stride) {
-    AME_ISSUE_WITH_GPR(AME_MLBE(ESIZE_8, TR2, GPR_T1, GPR_T2), base_addr, stride);
-}
+// Load A (8-bit) into tr_reg: base_addr in t1, stride in t2
+#define ame_mlae8(tr_reg, base_addr, stride) \
+    AME_ISSUE_WITH_GPR(AME_MLAE(ESIZE_8, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
 
-// Zero accumulator acc0
-static inline void ame_mzero(void) {
-    AME_ISSUE(AME_MZERO(ACC0));
-}
+// Load B (8-bit) into tr_reg: base_addr in t1, stride in t2
+#define ame_mlbe8(tr_reg, base_addr, stride) \
+    AME_ISSUE_WITH_GPR(AME_MLBE(ESIZE_8, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
 
-// Matrix multiply-accumulate: acc0 += tr0 * tr2^T (int8 signed)
-static inline void ame_mmacc_w_b(void) {
-    AME_ISSUE(AME_MMACC_W_B(ACC0, TR0, TR2));
-}
+// Zero accumulator acc_reg
+#define ame_mzero(acc_reg) \
+    AME_ISSUE(AME_MZERO(acc_reg))
 
-// Store acc0 as 32-bit to memory: base in t1, stride in t2
-static inline void ame_msce32(uint64_t base_addr, uint64_t stride) {
-    AME_ISSUE_WITH_GPR(AME_MSCE(ESIZE_32, ACC0, GPR_T1, GPR_T2), base_addr, stride);
-}
+// Matrix multiply-accumulate (int8 signed): acc_reg += tr_a * tr_b^T
+// tr_a selects A scratchpad bank (TR0->bank0, TR1->bank1)
+// tr_b selects B scratchpad bank (TR2->bank0, TR3->bank1)
+// acc_reg selects C scratchpad bank (ACC0->bank0, ACC1->bank1)
+#define ame_mmacc_w_b(acc_reg, tr_a, tr_b) \
+    AME_ISSUE(AME_MMACC_W_B(acc_reg, tr_a, tr_b))
+
+// Store acc_reg as 32-bit to memory: base_addr in t1, stride in t2
+#define ame_msce32(acc_reg, base_addr, stride) \
+    AME_ISSUE_WITH_GPR(AME_MSCE(ESIZE_32, acc_reg, GPR_T1, GPR_T2), base_addr, stride)
 
 // Fence: hardware-blocking wait for all AME operations to complete.
 // The RoCC interface stalls the CPU pipeline until all micro-instruction

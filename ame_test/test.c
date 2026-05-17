@@ -6,22 +6,26 @@
 #include <stdint.h>
 #include <string.h>
 #include "ame.h"
-#include "cuteMarcoinstHelper.h"
 #include "marchid.h"
 #include "matmul_value_mnk_128_128_64.h"
+#include "matmul_cref_128_128_64.h"
 #define APPLICATION_M 128
 #define APPLICATION_N 128
 #define APPLICATION_K 64
-
+#define ARRAY_BASE_ADDR  0x81000000
 
 int main(void) {
-    //printf("AME Test: %dx%dx%d INT8 GEMM (single tile)\n",
-    //       APPLICATION_M, APPLICATION_N, APPLICATION_K);
+    printf("AME Test: %dx%dx%d INT8 GEMM (single tile)\n",
+           APPLICATION_M, APPLICATION_N, APPLICATION_K);
+    // 访问数组（通过指针）
+    volatile int32_t (*c)[APPLICATION_N] = (volatile int32_t (*)[APPLICATION_N])ARRAY_BASE_ADDR;
+    for (int i = 0; i < APPLICATION_M; i++)
+        for (int j = 0; j < APPLICATION_N; j++)
+            c[i][j] =0;
 
-    //init_matrices();
-    //memset(C, 0, sizeof(C));
-    //compute_reference();
-    printf("init\n");
+    int errors = 0;
+    printf("init done\n");
+
     // --- AME single-tile GEMM ---
     uint64_t a_stride = APPLICATION_K * sizeof(int8_t);   // 64 bytes per row
     uint64_t b_stride = APPLICATION_K * sizeof(int8_t);   // 64 bytes per row
@@ -35,20 +39,20 @@ int main(void) {
     uint64_t cycle_start, cycle_end;
     asm volatile("rdcycle %0" : "=r"(cycle_start));
 
-    // 1. Zero accumulator (acc0)
-    //ame_mzero();
+    // 1. Zero accumulator acc0 (bank 0)
+    ame_mzero(ACC0);
 
-    // 2. Load A[128][64] into tr0
-    ame_mlae8((uint64_t)a, a_stride);
+    // 2. Load A[128][64] into tr0 (A bank 0)
+    ame_mlae8(TR0, (uint64_t)a, a_stride);
 
-    // 3. Load B[128][64] into tr2 (B is stored transposed: N x K)
-    ame_mlbe8((uint64_t)b, b_stride);
+    // 3. Load B[128][64] into tr2 (B bank 0)
+    ame_mlbe8(TR2, (uint64_t)b, b_stride);
 
-    // 4. Compute: acc0 += tr0 * tr2^T (mmacc.w.b)
-    ame_mmacc_w_b();
+    // 4. Compute: acc0 += tr0 * tr2^T  (A-bank0 * B-bank0 -> C-bank0)
+    ame_mmacc_w_b(ACC0, TR0, TR2);
 
-    // 5. Store acc0 -> C[128][128] 指定C矩阵的地址
-    ame_msce32(0x80020000, c_stride);
+    // 5. Store acc0 -> C[128][128]
+    ame_msce32(ACC0, (uint64_t)c, c_stride);
 
     uint64_t res1 = 1;  
     res1 = ame_is_idle();
@@ -59,5 +63,22 @@ int main(void) {
     asm volatile("rdcycle %0" : "=r"(cycle_end));
     printf("AME GEMM done in %lu cycles\n", cycle_end - cycle_start);
 
+    
+
+    for (int j = 0; j < APPLICATION_N; j++) {
+        if (c[0][j] != c_ref[0][j]) {
+            if (errors < 10)
+                printf("MISMATCH C[%d][%d]: got %d, expected %d\n",
+                        0, j, c[0][j], c_ref[0][j]);
+            errors++;
+        }
+    }
+
+    if (errors == 0) {
+        printf("PASS! All %d elements match.\n", APPLICATION_M * APPLICATION_N);
+    } else {
+        printf("FAIL! %d mismatches out of %d elements.\n",
+               errors, APPLICATION_M * APPLICATION_N);
+    }
     return 0;
 }

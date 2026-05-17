@@ -6,61 +6,26 @@
 #include <stdint.h>
 #include <string.h>
 #include "ame.h"
-
+#include "marchid.h"
+#include "matmul_value_mnk_128_128_64.h"
+#include "matmul_cref_128_128_64.h"
 #define APPLICATION_M 128
 #define APPLICATION_N 128
 #define APPLICATION_K 64
-
-// Input matrices (int8)
-static int8_t A[APPLICATION_M][APPLICATION_K] __attribute__((aligned(64)));
-static int8_t B[APPLICATION_N][APPLICATION_K] __attribute__((aligned(64)));
-// Output matrix (int32 accumulator)
-static int32_t C[APPLICATION_M][APPLICATION_N] __attribute__((aligned(64)));
-// Reference output
-static int32_t C_ref[APPLICATION_M][APPLICATION_N];
-
-static void init_matrices(void) {
-    for (int i = 0; i < APPLICATION_M; i++)
-        for (int j = 0; j < APPLICATION_K; j++)
-            //A[i][j] = (int8_t)((i * 3 + j * 7 + 1) % 127 - 63);
-            A[i][j] =0;
-
-    for (int i = 0; i < APPLICATION_N; i++)
-        for (int j = 0; j < APPLICATION_K; j++)
-            B[i][j] = 0;//(int8_t)((i * 5 + j * 11 + 3) % 127 - 63);
-}
-
-static void compute_reference(void) {
-    memset(C_ref, 0, sizeof(C_ref));
-    for (int i = 0; i < APPLICATION_M; i++)
-        for (int j = 0; j < APPLICATION_N; j++)
-            for (int k = 0; k < APPLICATION_K; k++)
-                C_ref[i][j] += (int32_t)A[i][k] * (int32_t)B[j][k];
-}
-
-static int verify_result(void) {
-    int errors = 0;
-    for (int i = 0; i < APPLICATION_M; i++) {
-        for (int j = 0; j < APPLICATION_N; j++) {
-            if (C[i][j] != C_ref[i][j]) {
-                if (errors < 10)
-                    printf("MISMATCH C[%d][%d]: got %d, expected %d\n",
-                           i, j, C[i][j], C_ref[i][j]);
-                errors++;
-            }
-        }
-    }
-    return errors;
-}
+#define ARRAY_BASE_ADDR  0x81000000
 
 int main(void) {
     printf("AME Test: %dx%dx%d INT8 GEMM (single tile)\n",
            APPLICATION_M, APPLICATION_N, APPLICATION_K);
+    // 访问数组（通过指针）
+    volatile int32_t (*c)[APPLICATION_N] = (volatile int32_t (*)[APPLICATION_N])ARRAY_BASE_ADDR;
+    for (int i = 0; i < APPLICATION_M; i++)
+        for (int j = 0; j < APPLICATION_N; j++)
+            c[i][j] =0;
 
-    init_matrices();
-    //memset(C, 0, sizeof(C));
-    //compute_reference();
-    printf("init\n");
+    int errors = 0;
+    printf("init done\n");
+
     // --- AME single-tile GEMM ---
     uint64_t a_stride = APPLICATION_K * sizeof(int8_t);   // 64 bytes per row
     uint64_t b_stride = APPLICATION_K * sizeof(int8_t);   // 64 bytes per row
@@ -74,41 +39,47 @@ int main(void) {
     uint64_t cycle_start, cycle_end;
     asm volatile("rdcycle %0" : "=r"(cycle_start));
 
-    // 1. Zero accumulator (acc0)
-    //ame_mzero();
+    // 1. Zero accumulator acc0 (bank 0)
+    ame_mzero(ACC0);
 
-    // 2. Load A[128][64] into tr0
-    ame_mlae8((uint64_t)A, a_stride);
+    // 2. Load A[128][64] into tr0 (A bank 0)
+    ame_mlae8(TR0, (uint64_t)a, a_stride);
 
-    // 3. Load B[128][64] into tr2 (B is stored transposed: N x K)
-    ame_mlbe8((uint64_t)B, b_stride);
+    // 3. Load B[128][64] into tr2 (B bank 0)
+    ame_mlbe8(TR2, (uint64_t)b, b_stride);
 
-    // 4. Compute: acc0 += tr0 * tr2^T (mmacc.w.b)
-    ame_mmacc_w_b();
+    // 4. Compute: acc0 += tr0 * tr2^T  (A-bank0 * B-bank0 -> C-bank0)
+    ame_mmacc_w_b(ACC0, TR0, TR2);
 
     // 5. Store acc0 -> C[128][128]
-    ame_msce32((uint64_t)C, c_stride);
+    ame_msce32(ACC0, (uint64_t)c, c_stride);
 
-    uint64_t res1 = 1;
-    res1 = cute_inst_fifo_finish_search();
+    uint64_t res1 = 1;  
+    res1 = ame_is_idle();
     while(!res1)
     {
-        //printf("Waiting for finish\n");
-        res1 = cute_inst_fifo_finish_search();
+        res1 = ame_is_idle();
     }
-
     asm volatile("rdcycle %0" : "=r"(cycle_end));
     printf("AME GEMM done in %lu cycles\n", cycle_end - cycle_start);
 
-    // Verify
-    /*int errors = verify_result();
+    
+    for (int i = 0; i < APPLICATION_M; i++) {
+        for (int j = 0; j < APPLICATION_N; j++) {
+            if (c[i][j] != c_ref[i][j]) {
+                if (errors < 10)
+                    printf("MISMATCH C[%d][%d]: got %d, expected %d\n",
+                           i, j, c[i][j], c_ref[i][j]);
+                errors++;
+            }
+        }
+    }
+
     if (errors == 0) {
         printf("PASS! All %d elements match.\n", APPLICATION_M * APPLICATION_N);
     } else {
         printf("FAIL! %d mismatches out of %d elements.\n",
                errors, APPLICATION_M * APPLICATION_N);
     }
-
-    return (errors == 0) ? 0 : 1;*/
     return 0;
 }
