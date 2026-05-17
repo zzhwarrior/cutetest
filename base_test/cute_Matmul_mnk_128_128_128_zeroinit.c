@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include "cuteMarcoinstHelper.h"
 #include "matmul_value_mnk_128_128_128_zeroinit.h"
-
+#include "matmul_cref_128_128_128.h"
 int main(void) {
 
 
@@ -54,6 +54,24 @@ int main(void) {
 	printf("acc write req: %ld\n", res1);
 
     printf("D Test start\n");
+    int errors = 0;
+    for (int i = 0; i < APPLICATION_M; i++) {
+        for (int j = 0; j < APPLICATION_N; j++) {
+            if (d[i][j] != c_ref[i][j]) {
+                if (errors < 10)
+                    printf("MISMATCH C[%d][%d]: got %d, expected %d\n",
+                           i, j, d[i][j], c_ref[i][j]);
+                errors++;
+            }
+        }
+    }
+
+    if (errors == 0) {
+        printf("PASS! All %d elements match.\n", APPLICATION_M * APPLICATION_N);
+    } else {
+        printf("FAIL! %d mismatches out of %d elements.\n",
+               errors, APPLICATION_M * APPLICATION_N);
+    }
     printf("Pass!\n");
 
 
