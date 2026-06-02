@@ -18,7 +18,7 @@ int main(void) {
     uint64_t C_Stride = APPLICATION_N * sizeof(c[0][0]);
     // uint64_t D = output;
     uint64_t D_Stride = APPLICATION_N * sizeof(d[0][0]);
-    uint64_t element_type = 1;//1byte per input
+    uint64_t element_type = CUTEDataTypeI8I8I32;//1byte per input
     uint64_t bias_type = TaskTypeTensorRepeatRowLoad;
     // uint64_t transpose_result = 0;
     uint64_t current_M_index = 0;
