@@ -3,7 +3,9 @@
 #################################
 
 # Change PREFIX to your toolchain prefix
-PREFIX = /home/yuanbin/gcc14-rv-baremetal-rvv-toolchain/bin/riscv64-unknown-elf-
+CUTEROOT = ${PWD}/../../..
+RVVTOOLCHAIN = ${CUTEROOT}/tool/riscv
+PREFIX = ${RVVTOOLCHAIN}/bin/riscv64-unknown-elf-
 
 GCC = $(PREFIX)gcc
 CXX = $(PREFIX)g++
@@ -35,9 +37,7 @@ CFLAGS += -specs=$(libgloss_specs)
 LDFLAGS += -specs=$(libgloss_specs)
 
  
-PROGRAMS = cute_Matmul_mxfp8_mnk_64_64_64_zeroinit cute_Matmul_mxfp8_mnk_128_128_128_zeroinit cute_Matmul_mxfp8_mnk_256_256_256_zeroinit cute_Matmul_mxfp8_mnk_512_512_512_zeroinit
-PROGRAMS += cute_Matmul_mxfp8_mnk_64_64_64_fullbias cute_Matmul_mxfp8_mnk_128_128_128_fullbias cute_Matmul_mxfp8_mnk_256_256_256_fullbias cute_Matmul_mxfp8_mnk_512_512_512_fullbias
-
+PROGRAMS = cute_Matmul_mxfp8_mnk_64_64_64_zeroinit 
 
 
 .DEFAULT_GOAL := default

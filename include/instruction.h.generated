@@ -1,0 +1,779 @@
+/**
+ * Auto-generated from CuteInstConfigs
+ * DO NOT EDIT MANUALLY
+ * Generated at: Mon Apr 27 16:33:14 AST 2026
+ */
+
+#ifndef CUTE_INSTRUCTION_H
+#define CUTE_INSTRUCTION_H
+
+#include <stdint.h>
+#include "ygjk.h"
+
+// ========================================
+// Instruction Function Codes
+// ========================================
+// YGK/RoCC Interface Instructions (funct 1-8): direct values
+// CUTE Internal Instructions (funct + 64): need to add 64
+
+#define CUTE_INST_FUNCT_QUERY_ACCELERATOR_BUSY        1  // 查询加速器是否正在运行
+#define CUTE_INST_FUNCT_QUERY_RUNTIME                 2  // 查询加速器运行时间（时钟周期数）
+#define CUTE_INST_FUNCT_QUERY_MEM_READ_COUNT          3  // 查询加速器对外访存读次数
+#define CUTE_INST_FUNCT_QUERY_MEM_WRITE_COUNT         4  // 查询加速器对外访存写次数
+#define CUTE_INST_FUNCT_QUERY_COMPUTE_TIME            5  // 查询加速器计算时间
+#define CUTE_INST_FUNCT_QUERY_MACRO_INST_FINISH       6  // 查询 CUTE 宏指令的完成情况
+#define CUTE_INST_FUNCT_QUERY_MACRO_INST_FIFO_FULL    7  // 查询 CUTE 宏指令队列是否已满
+#define CUTE_INST_FUNCT_QUERY_MACRO_INST_FIFO_INFO    8  // 查询 CUTE 宏指令队列目前有多少指令
+#define CUTE_INST_FUNCT_SEND_MACRO_INST               64  // [+64] 发送已配置的宏指令到指令FIFO
+#define CUTE_INST_FUNCT_CONFIG_TENSOR_A               65  // [+64] 配置A张量的基地址和步长
+#define CUTE_INST_FUNCT_CONFIG_TENSOR_B               66  // [+64] 配置B张量的基地址和步长
+#define CUTE_INST_FUNCT_CONFIG_TENSOR_C               67  // [+64] 配置C张量的基地址和步长
+#define CUTE_INST_FUNCT_CONFIG_TENSOR_D               68  // [+64] 配置D张量的基地址和步长
+#define CUTE_INST_FUNCT_CONFIG_TENSOR_DIM             69  // [+64] 配置张量维度(M,N,K)，对于卷积则是(ohow,oc,ic)
+#define CUTE_INST_FUNCT_CONFIG_CONV_PARAMS            70  // [+64] 配置卷积相关参数（element_type, bias_type, kernel_size等）
+#define CUTE_INST_FUNCT_CONFIG_SCALE_A                71  // [+64] 配置A Scale（量化参数）的基地址
+#define CUTE_INST_FUNCT_CONFIG_SCALE_B                72  // [+64] 配置B Scale（量化参数）的基地址
+#define CUTE_INST_FUNCT_CLEAR_INST                    80  // [+64] 清除队尾的宏指令
+#define CUTE_INST_FUNCT_QUERY_INST                    81  // [+64] 查询当前完成宏指令的尾编号位置
+#define CUTE_INST_FUNCT_RESERVED                      82  // [+64] 保留指令（空操作）
+
+
+// ========================================
+// Instruction Field Definitions
+// ========================================
+
+// Instruction: QUERY_ACCELERATOR_BUSY (funct = 1)
+// 查询加速器是否正在运行
+
+// Instruction: QUERY_RUNTIME (funct = 2)
+// 查询加速器运行时间（时钟周期数）
+
+// Instruction: QUERY_MEM_READ_COUNT (funct = 3)
+// 查询加速器对外访存读次数
+
+// Instruction: QUERY_MEM_WRITE_COUNT (funct = 4)
+// 查询加速器对外访存写次数
+
+// Instruction: QUERY_COMPUTE_TIME (funct = 5)
+// 查询加速器计算时间
+
+// Instruction: QUERY_MACRO_INST_FINISH (funct = 6)
+// 查询 CUTE 宏指令的完成情况
+
+// Instruction: QUERY_MACRO_INST_FIFO_FULL (funct = 7)
+// 查询 CUTE 宏指令队列是否已满
+
+// Instruction: QUERY_MACRO_INST_FIFO_INFO (funct = 8)
+// 查询 CUTE 宏指令队列目前有多少指令
+
+// Instruction: SEND_MACRO_INST (funct = 0)
+// 发送已配置的宏指令到指令FIFO
+
+// Instruction: CONFIG_TENSOR_A (funct = 1)
+// 配置A张量的基地址和步长
+// cfgData1 fields:
+#define CUTE_INST_CONFIG_TENSOR_A_CFGDATA1_ApplicationTensor_A_BaseVaddr_HI 63
+#define CUTE_INST_CONFIG_TENSOR_A_CFGDATA1_ApplicationTensor_A_BaseVaddr_LO 0  // A张量的基地址
+#define CUTE_INST_CONFIG_TENSOR_A_CFGDATA1_ApplicationTensor_A_BaseVaddr_WIDTH 64
+// cfgData2 fields:
+#define CUTE_INST_CONFIG_TENSOR_A_CFGDATA2_ApplicationTensor_A_Stride_HI 63
+#define CUTE_INST_CONFIG_TENSOR_A_CFGDATA2_ApplicationTensor_A_Stride_LO 0  // A张量的步长
+#define CUTE_INST_CONFIG_TENSOR_A_CFGDATA2_ApplicationTensor_A_Stride_WIDTH 64
+
+// Instruction: CONFIG_TENSOR_B (funct = 2)
+// 配置B张量的基地址和步长
+// cfgData1 fields:
+#define CUTE_INST_CONFIG_TENSOR_B_CFGDATA1_ApplicationTensor_B_BaseVaddr_HI 63
+#define CUTE_INST_CONFIG_TENSOR_B_CFGDATA1_ApplicationTensor_B_BaseVaddr_LO 0  // B张量的基地址
+#define CUTE_INST_CONFIG_TENSOR_B_CFGDATA1_ApplicationTensor_B_BaseVaddr_WIDTH 64
+// cfgData2 fields:
+#define CUTE_INST_CONFIG_TENSOR_B_CFGDATA2_ApplicationTensor_B_Stride_HI 63
+#define CUTE_INST_CONFIG_TENSOR_B_CFGDATA2_ApplicationTensor_B_Stride_LO 0  // B张量的步长
+#define CUTE_INST_CONFIG_TENSOR_B_CFGDATA2_ApplicationTensor_B_Stride_WIDTH 64
+
+// Instruction: CONFIG_TENSOR_C (funct = 3)
+// 配置C张量的基地址和步长
+// cfgData1 fields:
+#define CUTE_INST_CONFIG_TENSOR_C_CFGDATA1_ApplicationTensor_C_BaseVaddr_HI 63
+#define CUTE_INST_CONFIG_TENSOR_C_CFGDATA1_ApplicationTensor_C_BaseVaddr_LO 0  // C张量的基地址
+#define CUTE_INST_CONFIG_TENSOR_C_CFGDATA1_ApplicationTensor_C_BaseVaddr_WIDTH 64
+// cfgData2 fields:
+#define CUTE_INST_CONFIG_TENSOR_C_CFGDATA2_ApplicationTensor_C_Stride_HI 63
+#define CUTE_INST_CONFIG_TENSOR_C_CFGDATA2_ApplicationTensor_C_Stride_LO 0  // C张量的步长
+#define CUTE_INST_CONFIG_TENSOR_C_CFGDATA2_ApplicationTensor_C_Stride_WIDTH 64
+
+// Instruction: CONFIG_TENSOR_D (funct = 4)
+// 配置D张量的基地址和步长
+// cfgData1 fields:
+#define CUTE_INST_CONFIG_TENSOR_D_CFGDATA1_ApplicationTensor_D_BaseVaddr_HI 63
+#define CUTE_INST_CONFIG_TENSOR_D_CFGDATA1_ApplicationTensor_D_BaseVaddr_LO 0  // D张量的基地址
+#define CUTE_INST_CONFIG_TENSOR_D_CFGDATA1_ApplicationTensor_D_BaseVaddr_WIDTH 64
+// cfgData2 fields:
+#define CUTE_INST_CONFIG_TENSOR_D_CFGDATA2_ApplicationTensor_D_Stride_HI 63
+#define CUTE_INST_CONFIG_TENSOR_D_CFGDATA2_ApplicationTensor_D_Stride_LO 0  // D张量的步长
+#define CUTE_INST_CONFIG_TENSOR_D_CFGDATA2_ApplicationTensor_D_Stride_WIDTH 64
+
+// Instruction: CONFIG_TENSOR_DIM (funct = 5)
+// 配置张量维度(M,N,K)，对于卷积则是(ohow,oc,ic)
+// cfgData1 fields:
+#define CUTE_INST_CONFIG_TENSOR_DIM_CFGDATA1_Application_M_HI        19
+#define CUTE_INST_CONFIG_TENSOR_DIM_CFGDATA1_Application_M_LO        0  // 张量M维度 (max=65536)
+#define CUTE_INST_CONFIG_TENSOR_DIM_CFGDATA1_Application_M_MAX_VALUE 65535UL  // 软件填值不应超过此值
+#define CUTE_INST_CONFIG_TENSOR_DIM_CFGDATA1_Application_M_WIDTH     20
+#define CUTE_INST_CONFIG_TENSOR_DIM_CFGDATA1_Application_N_HI        39
+#define CUTE_INST_CONFIG_TENSOR_DIM_CFGDATA1_Application_N_LO        20  // 张量N维度 (max=65536)
+#define CUTE_INST_CONFIG_TENSOR_DIM_CFGDATA1_Application_N_MAX_VALUE 65535UL  // 软件填值不应超过此值
+#define CUTE_INST_CONFIG_TENSOR_DIM_CFGDATA1_Application_N_WIDTH     20
+#define CUTE_INST_CONFIG_TENSOR_DIM_CFGDATA1_Application_K_HI        59
+#define CUTE_INST_CONFIG_TENSOR_DIM_CFGDATA1_Application_K_LO        40  // 张量K维度 (max=65536)
+#define CUTE_INST_CONFIG_TENSOR_DIM_CFGDATA1_Application_K_MAX_VALUE 65535UL  // 软件填值不应超过此值
+#define CUTE_INST_CONFIG_TENSOR_DIM_CFGDATA1_Application_K_WIDTH     20
+// cfgData2 fields:
+#define CUTE_INST_CONFIG_TENSOR_DIM_CFGDATA2_kernel_stride_HI        63
+#define CUTE_INST_CONFIG_TENSOR_DIM_CFGDATA2_kernel_stride_LO        0  // 卷积核步长（矩阵乘时为0），64位地址无约束
+#define CUTE_INST_CONFIG_TENSOR_DIM_CFGDATA2_kernel_stride_WIDTH     64
+
+// Instruction: CONFIG_CONV_PARAMS (funct = 6)
+// 配置卷积相关参数（element_type, bias_type, kernel_size等）
+// cfgData1 fields:
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_element_type_HI        7
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_element_type_LO        0  // 元素数据类型 (8位枚举，max=15)
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_element_type_MAX_VALUE 15UL  // 软件填值不应超过此值
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_element_type_WIDTH     8
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_bias_type_HI           15
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_bias_type_LO           8  // 偏置数据类型 (8位枚举，max=4)
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_bias_type_MAX_VALUE    3UL  // 软件填值不应超过此值
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_bias_type_WIDTH        8
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_transpose_result_HI    23
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_transpose_result_LO    16  // 是否转置结果 (Bool, max=1)
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_transpose_result_MAX_VALUE 1UL  // 软件填值不应超过此值
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_transpose_result_WIDTH 8
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_conv_stride_HI         31
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_conv_stride_LO         24  // 卷积步长 (max=4)
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_conv_stride_MAX_VALUE  3UL  // 软件填值不应超过此值
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_conv_stride_WIDTH      8
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_conv_oh_max_HI         47
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_conv_oh_max_LO         32  // 卷积输出高度最大值 (max=16384)
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_conv_oh_max_MAX_VALUE  16383UL  // 软件填值不应超过此值
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_conv_oh_max_WIDTH      16
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_conv_ow_max_HI         63
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_conv_ow_max_LO         48  // 卷积输出宽度最大值 (max=16384)
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_conv_ow_max_MAX_VALUE  16383UL  // 软件填值不应超过此值
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA1_conv_ow_max_WIDTH      16
+// cfgData2 fields:
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_kernel_size_HI         7
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_kernel_size_LO         0  // 卷积核大小 (max=16)
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_kernel_size_MAX_VALUE  15UL  // 软件填值不应超过此值
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_kernel_size_WIDTH      8
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_conv_oh_per_add_HI     25
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_conv_oh_per_add_LO     16  // 卷积输出高度每次增加量 (max=16384)
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_conv_oh_per_add_MAX_VALUE 1023UL  // 软件填值不应超过此值
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_conv_oh_per_add_WIDTH  10
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_conv_ow_per_add_HI     35
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_conv_ow_per_add_LO     26  // 卷积输出宽度每次增加量 (max=16384)
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_conv_ow_per_add_MAX_VALUE 1023UL  // 软件填值不应超过此值
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_conv_ow_per_add_WIDTH  10
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_conv_oh_index_HI       45
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_conv_oh_index_LO       36  // 卷积输出的高起始值
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_conv_oh_index_MAX_VALUE 1023UL  // 软件填值不应超过此值
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_conv_oh_index_WIDTH    10
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_conv_ow_index_HI       55
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_conv_ow_index_LO       46  // 卷积输出的宽起始值
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_conv_ow_index_MAX_VALUE 1023UL  // 软件填值不应超过此值
+#define CUTE_INST_CONFIG_CONV_PARAMS_CFGDATA2_conv_ow_index_WIDTH    10
+
+// Instruction: CONFIG_SCALE_A (funct = 7)
+// 配置A Scale（量化参数）的基地址
+// cfgData1 fields:
+#define CUTE_INST_CONFIG_SCALE_A_CFGDATA1_ApplicationScale_A_BaseVaddr_HI 63
+#define CUTE_INST_CONFIG_SCALE_A_CFGDATA1_ApplicationScale_A_BaseVaddr_LO 0  // A Scale的基地址
+#define CUTE_INST_CONFIG_SCALE_A_CFGDATA1_ApplicationScale_A_BaseVaddr_WIDTH 64
+
+// Instruction: CONFIG_SCALE_B (funct = 8)
+// 配置B Scale（量化参数）的基地址
+// cfgData1 fields:
+#define CUTE_INST_CONFIG_SCALE_B_CFGDATA1_ApplicationScale_B_BaseVaddr_HI 63
+#define CUTE_INST_CONFIG_SCALE_B_CFGDATA1_ApplicationScale_B_BaseVaddr_LO 0  // B Scale的基地址
+#define CUTE_INST_CONFIG_SCALE_B_CFGDATA1_ApplicationScale_B_BaseVaddr_WIDTH 64
+
+// Instruction: CLEAR_INST (funct = 16)
+// 清除队尾的宏指令
+
+// Instruction: QUERY_INST (funct = 17)
+// 查询当前完成宏指令的尾编号位置
+
+// Instruction: RESERVED (funct = 18)
+// 保留指令（空操作）
+
+
+// ========================================
+// Field Extraction Macros
+// ========================================
+
+// Extract fields for CONFIG_TENSOR_A (cfgData1)
+#define CUTE_GET_CONFIG_TENSOR_A_CFGDATA1_ApplicationTensor_A_BaseVaddr(cfgdata1) (((cfgdata1) >> 0) & 0xFFFFFFFFFFFFFFFFUL)
+
+// Extract fields for CONFIG_TENSOR_A (cfgData2)
+#define CUTE_GET_CONFIG_TENSOR_A_CFGDATA2_ApplicationTensor_A_Stride(cfgdata2) (((cfgdata2) >> 0) & 0xFFFFFFFFFFFFFFFFUL)
+
+// Extract fields for CONFIG_TENSOR_B (cfgData1)
+#define CUTE_GET_CONFIG_TENSOR_B_CFGDATA1_ApplicationTensor_B_BaseVaddr(cfgdata1) (((cfgdata1) >> 0) & 0xFFFFFFFFFFFFFFFFUL)
+
+// Extract fields for CONFIG_TENSOR_B (cfgData2)
+#define CUTE_GET_CONFIG_TENSOR_B_CFGDATA2_ApplicationTensor_B_Stride(cfgdata2) (((cfgdata2) >> 0) & 0xFFFFFFFFFFFFFFFFUL)
+
+// Extract fields for CONFIG_TENSOR_C (cfgData1)
+#define CUTE_GET_CONFIG_TENSOR_C_CFGDATA1_ApplicationTensor_C_BaseVaddr(cfgdata1) (((cfgdata1) >> 0) & 0xFFFFFFFFFFFFFFFFUL)
+
+// Extract fields for CONFIG_TENSOR_C (cfgData2)
+#define CUTE_GET_CONFIG_TENSOR_C_CFGDATA2_ApplicationTensor_C_Stride(cfgdata2) (((cfgdata2) >> 0) & 0xFFFFFFFFFFFFFFFFUL)
+
+// Extract fields for CONFIG_TENSOR_D (cfgData1)
+#define CUTE_GET_CONFIG_TENSOR_D_CFGDATA1_ApplicationTensor_D_BaseVaddr(cfgdata1) (((cfgdata1) >> 0) & 0xFFFFFFFFFFFFFFFFUL)
+
+// Extract fields for CONFIG_TENSOR_D (cfgData2)
+#define CUTE_GET_CONFIG_TENSOR_D_CFGDATA2_ApplicationTensor_D_Stride(cfgdata2) (((cfgdata2) >> 0) & 0xFFFFFFFFFFFFFFFFUL)
+
+// Extract fields for CONFIG_TENSOR_DIM (cfgData1)
+#define CUTE_GET_CONFIG_TENSOR_DIM_CFGDATA1_Application_M(cfgdata1) (((cfgdata1) >> 0) & 0xFFFFFUL)
+#define CUTE_GET_CONFIG_TENSOR_DIM_CFGDATA1_Application_N(cfgdata1) (((cfgdata1) >> 20) & 0xFFFFFUL)
+#define CUTE_GET_CONFIG_TENSOR_DIM_CFGDATA1_Application_K(cfgdata1) (((cfgdata1) >> 40) & 0xFFFFFUL)
+
+// Extract fields for CONFIG_TENSOR_DIM (cfgData2)
+#define CUTE_GET_CONFIG_TENSOR_DIM_CFGDATA2_kernel_stride(cfgdata2) (((cfgdata2) >> 0) & 0xFFFFFFFFFFFFFFFFUL)
+
+// Extract fields for CONFIG_CONV_PARAMS (cfgData1)
+#define CUTE_GET_CONFIG_CONV_PARAMS_CFGDATA1_element_type(cfgdata1) (((cfgdata1) >> 0) & 0xFFUL)
+#define CUTE_GET_CONFIG_CONV_PARAMS_CFGDATA1_bias_type(cfgdata1) (((cfgdata1) >> 8) & 0xFFUL)
+#define CUTE_GET_CONFIG_CONV_PARAMS_CFGDATA1_transpose_result(cfgdata1) (((cfgdata1) >> 16) & 0xFFUL)
+#define CUTE_GET_CONFIG_CONV_PARAMS_CFGDATA1_conv_stride(cfgdata1) (((cfgdata1) >> 24) & 0xFFUL)
+#define CUTE_GET_CONFIG_CONV_PARAMS_CFGDATA1_conv_oh_max(cfgdata1) (((cfgdata1) >> 32) & 0xFFFFUL)
+#define CUTE_GET_CONFIG_CONV_PARAMS_CFGDATA1_conv_ow_max(cfgdata1) (((cfgdata1) >> 48) & 0xFFFFUL)
+
+// Extract fields for CONFIG_CONV_PARAMS (cfgData2)
+#define CUTE_GET_CONFIG_CONV_PARAMS_CFGDATA2_kernel_size(cfgdata2) (((cfgdata2) >> 0) & 0xFFUL)
+#define CUTE_GET_CONFIG_CONV_PARAMS_CFGDATA2_conv_oh_per_add(cfgdata2) (((cfgdata2) >> 16) & 0x3FFUL)
+#define CUTE_GET_CONFIG_CONV_PARAMS_CFGDATA2_conv_ow_per_add(cfgdata2) (((cfgdata2) >> 26) & 0x3FFUL)
+#define CUTE_GET_CONFIG_CONV_PARAMS_CFGDATA2_conv_oh_index(cfgdata2) (((cfgdata2) >> 36) & 0x3FFUL)
+#define CUTE_GET_CONFIG_CONV_PARAMS_CFGDATA2_conv_ow_index(cfgdata2) (((cfgdata2) >> 46) & 0x3FFUL)
+
+// Extract fields for CONFIG_SCALE_A (cfgData1)
+#define CUTE_GET_CONFIG_SCALE_A_CFGDATA1_ApplicationScale_A_BaseVaddr(cfgdata1) (((cfgdata1) >> 0) & 0xFFFFFFFFFFFFFFFFUL)
+
+// Extract fields for CONFIG_SCALE_B (cfgData1)
+#define CUTE_GET_CONFIG_SCALE_B_CFGDATA1_ApplicationScale_B_BaseVaddr(cfgdata1) (((cfgdata1) >> 0) & 0xFFFFFFFFFFFFFFFFUL)
+
+
+// ========================================
+// Field Assembly Macros
+// ========================================
+
+// Assemble cfgData1 for CONFIG_TENSOR_A
+#define CUTE_ASSEMBLY_CONFIG_TENSOR_A_CFGDATA1(applicationtensor_a_basevaddr) ( \
+  ((((uint64_t)(applicationtensor_a_basevaddr)) & 0xFFFFFFFFFFFFFFFFUL) << 0))
+
+// Assemble cfgData2 for CONFIG_TENSOR_A
+#define CUTE_ASSEMBLY_CONFIG_TENSOR_A_CFGDATA2(applicationtensor_a_stride) ( \
+  ((((uint64_t)(applicationtensor_a_stride)) & 0xFFFFFFFFFFFFFFFFUL) << 0))
+
+// Assemble cfgData1 for CONFIG_TENSOR_B
+#define CUTE_ASSEMBLY_CONFIG_TENSOR_B_CFGDATA1(applicationtensor_b_basevaddr) ( \
+  ((((uint64_t)(applicationtensor_b_basevaddr)) & 0xFFFFFFFFFFFFFFFFUL) << 0))
+
+// Assemble cfgData2 for CONFIG_TENSOR_B
+#define CUTE_ASSEMBLY_CONFIG_TENSOR_B_CFGDATA2(applicationtensor_b_stride) ( \
+  ((((uint64_t)(applicationtensor_b_stride)) & 0xFFFFFFFFFFFFFFFFUL) << 0))
+
+// Assemble cfgData1 for CONFIG_TENSOR_C
+#define CUTE_ASSEMBLY_CONFIG_TENSOR_C_CFGDATA1(applicationtensor_c_basevaddr) ( \
+  ((((uint64_t)(applicationtensor_c_basevaddr)) & 0xFFFFFFFFFFFFFFFFUL) << 0))
+
+// Assemble cfgData2 for CONFIG_TENSOR_C
+#define CUTE_ASSEMBLY_CONFIG_TENSOR_C_CFGDATA2(applicationtensor_c_stride) ( \
+  ((((uint64_t)(applicationtensor_c_stride)) & 0xFFFFFFFFFFFFFFFFUL) << 0))
+
+// Assemble cfgData1 for CONFIG_TENSOR_D
+#define CUTE_ASSEMBLY_CONFIG_TENSOR_D_CFGDATA1(applicationtensor_d_basevaddr) ( \
+  ((((uint64_t)(applicationtensor_d_basevaddr)) & 0xFFFFFFFFFFFFFFFFUL) << 0))
+
+// Assemble cfgData2 for CONFIG_TENSOR_D
+#define CUTE_ASSEMBLY_CONFIG_TENSOR_D_CFGDATA2(applicationtensor_d_stride) ( \
+  ((((uint64_t)(applicationtensor_d_stride)) & 0xFFFFFFFFFFFFFFFFUL) << 0))
+
+// Assemble cfgData1 for CONFIG_TENSOR_DIM
+#define CUTE_ASSEMBLY_CONFIG_TENSOR_DIM_CFGDATA1(application_m, application_n, application_k) ( \
+  ((((uint64_t)(application_k)) & 0xFFFFFUL) << 40) | \
+  ((((uint64_t)(application_n)) & 0xFFFFFUL) << 20) | \
+  ((((uint64_t)(application_m)) & 0xFFFFFUL) << 0))
+
+// Assemble cfgData2 for CONFIG_TENSOR_DIM
+#define CUTE_ASSEMBLY_CONFIG_TENSOR_DIM_CFGDATA2(kernel_stride) ( \
+  ((((uint64_t)(kernel_stride)) & 0xFFFFFFFFFFFFFFFFUL) << 0))
+
+// Assemble cfgData1 for CONFIG_CONV_PARAMS
+#define CUTE_ASSEMBLY_CONFIG_CONV_PARAMS_CFGDATA1(element_type, bias_type, transpose_result, conv_stride, conv_oh_max, conv_ow_max) ( \
+  ((((uint64_t)(conv_ow_max)) & 0xFFFFUL) << 48) | \
+  ((((uint64_t)(conv_oh_max)) & 0xFFFFUL) << 32) | \
+  ((((uint64_t)(conv_stride)) & 0xFFUL) << 24) | \
+  ((((uint64_t)(transpose_result)) & 0xFFUL) << 16) | \
+  ((((uint64_t)(bias_type)) & 0xFFUL) << 8) | \
+  ((((uint64_t)(element_type)) & 0xFFUL) << 0))
+
+// Assemble cfgData2 for CONFIG_CONV_PARAMS
+#define CUTE_ASSEMBLY_CONFIG_CONV_PARAMS_CFGDATA2(kernel_size, conv_oh_per_add, conv_ow_per_add, conv_oh_index, conv_ow_index) ( \
+  ((((uint64_t)(conv_ow_index)) & 0x3FFUL) << 46) | \
+  ((((uint64_t)(conv_oh_index)) & 0x3FFUL) << 36) | \
+  ((((uint64_t)(conv_ow_per_add)) & 0x3FFUL) << 26) | \
+  ((((uint64_t)(conv_oh_per_add)) & 0x3FFUL) << 16) | \
+  ((((uint64_t)(kernel_size)) & 0xFFUL) << 0))
+
+// Assemble cfgData1 for CONFIG_SCALE_A
+#define CUTE_ASSEMBLY_CONFIG_SCALE_A_CFGDATA1(applicationscale_a_basevaddr) ( \
+  ((((uint64_t)(applicationscale_a_basevaddr)) & 0xFFFFFFFFFFFFFFFFUL) << 0))
+
+// Assemble cfgData1 for CONFIG_SCALE_B
+#define CUTE_ASSEMBLY_CONFIG_SCALE_B_CFGDATA1(applicationscale_b_basevaddr) ( \
+  ((((uint64_t)(applicationscale_b_basevaddr)) & 0xFFFFFFFFFFFFFFFFUL) << 0))
+
+
+/*
+ * ========================================
+ * Instruction Set Documentation
+ * ========================================
+ */
+
+/*
+ * Instruction: QUERY_ACCELERATOR_BUSY
+ * Type: YGK/RoCC Interface
+ * Funct: 1
+ * Description: 查询加速器是否正在运行
+ * Return: 返回加速器是否忙碌 (1=忙碌, 0=空闲)
+ *
+ * cfgData1: Not used
+ * cfgData2: Not used
+ */
+
+/*
+ * Instruction: QUERY_RUNTIME
+ * Type: YGK/RoCC Interface
+ * Funct: 2
+ * Description: 查询加速器运行时间（时钟周期数）
+ * Return: 返回加速器运行时间（时钟周期数）
+ *
+ * cfgData1: Not used
+ * cfgData2: Not used
+ */
+
+/*
+ * Instruction: QUERY_MEM_READ_COUNT
+ * Type: YGK/RoCC Interface
+ * Funct: 3
+ * Description: 查询加速器对外访存读次数
+ * Return: 返回对外访存读次数
+ *
+ * cfgData1: Not used
+ * cfgData2: Not used
+ */
+
+/*
+ * Instruction: QUERY_MEM_WRITE_COUNT
+ * Type: YGK/RoCC Interface
+ * Funct: 4
+ * Description: 查询加速器对外访存写次数
+ * Return: 返回对外访存写次数
+ *
+ * cfgData1: Not used
+ * cfgData2: Not used
+ */
+
+/*
+ * Instruction: QUERY_COMPUTE_TIME
+ * Type: YGK/RoCC Interface
+ * Funct: 5
+ * Description: 查询加速器计算时间
+ * Return: 返回计算时间（时钟周期数）
+ *
+ * cfgData1: Not used
+ * cfgData2: Not used
+ */
+
+/*
+ * Instruction: QUERY_MACRO_INST_FINISH
+ * Type: YGK/RoCC Interface
+ * Funct: 6
+ * Description: 查询 CUTE 宏指令的完成情况
+ * Return: 返回宏指令队列中的完成情况 (0010 = id为1的指令已完成)
+ *
+ * cfgData1: Not used
+ * cfgData2: Not used
+ */
+
+/*
+ * Instruction: QUERY_MACRO_INST_FIFO_FULL
+ * Type: YGK/RoCC Interface
+ * Funct: 7
+ * Description: 查询 CUTE 宏指令队列是否已满
+ * Return: 返回FIFO是否已满 (1=满, 0=未满)
+ *
+ * cfgData1: Not used
+ * cfgData2: Not used
+ */
+
+/*
+ * Instruction: QUERY_MACRO_INST_FIFO_INFO
+ * Type: YGK/RoCC Interface
+ * Funct: 8
+ * Description: 查询 CUTE 宏指令队列目前有多少指令
+ * Return: 返回FIFO中当前指令状态 (0010 = id为1的位置已有指令)
+ *
+ * cfgData1: Not used
+ * cfgData2: Not used
+ */
+
+/*
+ * Instruction: SEND_MACRO_INST
+ * Type: CUTE Internal
+ * Funct: 0 + 64 = 64
+ * Description: 发送已配置的宏指令到指令FIFO
+ * Return: 返回指令在FIFO中的编号
+ *
+ * cfgData1: Not used
+ * cfgData2: Not used
+ */
+
+/*
+ * Instruction: CONFIG_TENSOR_A
+ * Type: CUTE Internal
+ * Funct: 1 + 64 = 65
+ * Description: 配置A张量的基地址和步长
+ * Return: 未使用
+ *
+ * cfgData1:
+ *   [63:0] ApplicationTensor_A_BaseVaddr - A张量的基地址
+ * cfgData2:
+ *   [63:0] ApplicationTensor_A_Stride - A张量的步长
+ */
+
+/*
+ * Instruction: CONFIG_TENSOR_B
+ * Type: CUTE Internal
+ * Funct: 2 + 64 = 66
+ * Description: 配置B张量的基地址和步长
+ * Return: 未使用
+ *
+ * cfgData1:
+ *   [63:0] ApplicationTensor_B_BaseVaddr - B张量的基地址
+ * cfgData2:
+ *   [63:0] ApplicationTensor_B_Stride - B张量的步长
+ */
+
+/*
+ * Instruction: CONFIG_TENSOR_C
+ * Type: CUTE Internal
+ * Funct: 3 + 64 = 67
+ * Description: 配置C张量的基地址和步长
+ * Return: 未使用
+ *
+ * cfgData1:
+ *   [63:0] ApplicationTensor_C_BaseVaddr - C张量的基地址
+ * cfgData2:
+ *   [63:0] ApplicationTensor_C_Stride - C张量的步长
+ */
+
+/*
+ * Instruction: CONFIG_TENSOR_D
+ * Type: CUTE Internal
+ * Funct: 4 + 64 = 68
+ * Description: 配置D张量的基地址和步长
+ * Return: 未使用
+ *
+ * cfgData1:
+ *   [63:0] ApplicationTensor_D_BaseVaddr - D张量的基地址
+ * cfgData2:
+ *   [63:0] ApplicationTensor_D_Stride - D张量的步长
+ */
+
+/*
+ * Instruction: CONFIG_TENSOR_DIM
+ * Type: CUTE Internal
+ * Funct: 5 + 64 = 69
+ * Description: 配置张量维度(M,N,K)，对于卷积则是(ohow,oc,ic)
+ * Return: 未使用
+ *
+ * cfgData1:
+ *   [19:0] Application_M - 张量M维度 (max=65536)
+ *   [39:20] Application_N - 张量N维度 (max=65536)
+ *   [59:40] Application_K - 张量K维度 (max=65536)
+ * cfgData2:
+ *   [63:0] kernel_stride - 卷积核步长（矩阵乘时为0），64位地址无约束
+ */
+
+/*
+ * Instruction: CONFIG_CONV_PARAMS
+ * Type: CUTE Internal
+ * Funct: 6 + 64 = 70
+ * Description: 配置卷积相关参数（element_type, bias_type, kernel_size等）
+ * Return: 未使用
+ *
+ * cfgData1:
+ *   [7:0] element_type - 元素数据类型 (8位枚举，max=15)
+ *   [15:8] bias_type - 偏置数据类型 (8位枚举，max=4)
+ *   [23:16] transpose_result - 是否转置结果 (Bool, max=1)
+ *   [31:24] conv_stride - 卷积步长 (max=4)
+ *   [47:32] conv_oh_max - 卷积输出高度最大值 (max=16384)
+ *   [63:48] conv_ow_max - 卷积输出宽度最大值 (max=16384)
+ * cfgData2:
+ *   [7:0] kernel_size - 卷积核大小 (max=16)
+ *   [25:16] conv_oh_per_add - 卷积输出高度每次增加量 (max=16384)
+ *   [35:26] conv_ow_per_add - 卷积输出宽度每次增加量 (max=16384)
+ *   [45:36] conv_oh_index - 卷积输出的高起始值
+ *   [55:46] conv_ow_index - 卷积输出的宽起始值
+ */
+
+/*
+ * Instruction: CONFIG_SCALE_A
+ * Type: CUTE Internal
+ * Funct: 7 + 64 = 71
+ * Description: 配置A Scale（量化参数）的基地址
+ * Return: 未使用
+ *
+ * cfgData1:
+ *   [63:0] ApplicationScale_A_BaseVaddr - A Scale的基地址
+ * cfgData2: Not used
+ */
+
+/*
+ * Instruction: CONFIG_SCALE_B
+ * Type: CUTE Internal
+ * Funct: 8 + 64 = 72
+ * Description: 配置B Scale（量化参数）的基地址
+ * Return: 未使用
+ *
+ * cfgData1:
+ *   [63:0] ApplicationScale_B_BaseVaddr - B Scale的基地址
+ * cfgData2: Not used
+ */
+
+/*
+ * Instruction: CLEAR_INST
+ * Type: CUTE Internal
+ * Funct: 16 + 64 = 80
+ * Description: 清除队尾的宏指令
+ * Return: 未使用
+ *
+ * cfgData1: Not used
+ * cfgData2: Not used
+ */
+
+/*
+ * Instruction: QUERY_INST
+ * Type: CUTE Internal
+ * Funct: 17 + 64 = 81
+ * Description: 查询当前完成宏指令的尾编号位置
+ * Return: 返回已完成宏指令的尾编号位置
+ *
+ * cfgData1: Not used
+ * cfgData2: Not used
+ */
+
+/*
+ * Instruction: RESERVED
+ * Type: CUTE Internal
+ * Funct: 18 + 64 = 82
+ * Description: 保留指令（空操作）
+ * Return: 未使用
+ *
+ * cfgData1: Not used
+ * cfgData2: Not used
+ */
+
+
+// ========================================
+// Auto-Generated Wrapper Functions
+// ========================================
+
+// 查询加速器是否正在运行
+// 返回值: 返回加速器是否忙碌 (1=忙碌, 0=空闲)
+uint64_t CUTE_QUERY_ACCELERATOR_BUSY(void)
+{
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, 0, 0, CUTE_INST_FUNCT_QUERY_ACCELERATOR_BUSY);
+    return res1;
+}
+
+// 查询加速器运行时间（时钟周期数）
+// 返回值: 返回加速器运行时间（时钟周期数）
+uint64_t CUTE_QUERY_RUNTIME(void)
+{
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, 0, 0, CUTE_INST_FUNCT_QUERY_RUNTIME);
+    return res1;
+}
+
+// 查询加速器对外访存读次数
+// 返回值: 返回对外访存读次数
+uint64_t CUTE_QUERY_MEM_READ_COUNT(void)
+{
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, 0, 0, CUTE_INST_FUNCT_QUERY_MEM_READ_COUNT);
+    return res1;
+}
+
+// 查询加速器对外访存写次数
+// 返回值: 返回对外访存写次数
+uint64_t CUTE_QUERY_MEM_WRITE_COUNT(void)
+{
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, 0, 0, CUTE_INST_FUNCT_QUERY_MEM_WRITE_COUNT);
+    return res1;
+}
+
+// 查询加速器计算时间
+// 返回值: 返回计算时间（时钟周期数）
+uint64_t CUTE_QUERY_COMPUTE_TIME(void)
+{
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, 0, 0, CUTE_INST_FUNCT_QUERY_COMPUTE_TIME);
+    return res1;
+}
+
+// 查询 CUTE 宏指令的完成情况
+// 返回值: 返回宏指令队列中的完成情况 (0010 = id为1的指令已完成)
+uint64_t CUTE_QUERY_MACRO_INST_FINISH(void)
+{
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, 0, 0, CUTE_INST_FUNCT_QUERY_MACRO_INST_FINISH);
+    return res1;
+}
+
+// 查询 CUTE 宏指令队列是否已满
+// 返回值: 返回FIFO是否已满 (1=满, 0=未满)
+uint64_t CUTE_QUERY_MACRO_INST_FIFO_FULL(void)
+{
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, 0, 0, CUTE_INST_FUNCT_QUERY_MACRO_INST_FIFO_FULL);
+    return res1;
+}
+
+// 查询 CUTE 宏指令队列目前有多少指令
+// 返回值: 返回FIFO中当前指令状态 (0010 = id为1的位置已有指令)
+uint64_t CUTE_QUERY_MACRO_INST_FIFO_INFO(void)
+{
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, 0, 0, CUTE_INST_FUNCT_QUERY_MACRO_INST_FIFO_INFO);
+    return res1;
+}
+
+// 发送已配置的宏指令到指令FIFO
+// 返回值: 返回指令在FIFO中的编号
+uint64_t CUTE_SEND_MACRO_INST(void)
+{
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, 0, 0, CUTE_INST_FUNCT_SEND_MACRO_INST);
+    return res1;
+}
+
+// 配置A张量的基地址和步长
+// 返回值: 未使用
+uint64_t CUTE_CONFIG_TENSOR_A(uint64_t applicationtensor_a_basevaddr, uint64_t applicationtensor_a_stride)
+{
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, applicationtensor_a_basevaddr, applicationtensor_a_stride, CUTE_INST_FUNCT_CONFIG_TENSOR_A);
+    return res1;
+}
+
+// 配置B张量的基地址和步长
+// 返回值: 未使用
+uint64_t CUTE_CONFIG_TENSOR_B(uint64_t applicationtensor_b_basevaddr, uint64_t applicationtensor_b_stride)
+{
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, applicationtensor_b_basevaddr, applicationtensor_b_stride, CUTE_INST_FUNCT_CONFIG_TENSOR_B);
+    return res1;
+}
+
+// 配置C张量的基地址和步长
+// 返回值: 未使用
+uint64_t CUTE_CONFIG_TENSOR_C(uint64_t applicationtensor_c_basevaddr, uint64_t applicationtensor_c_stride)
+{
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, applicationtensor_c_basevaddr, applicationtensor_c_stride, CUTE_INST_FUNCT_CONFIG_TENSOR_C);
+    return res1;
+}
+
+// 配置D张量的基地址和步长
+// 返回值: 未使用
+uint64_t CUTE_CONFIG_TENSOR_D(uint64_t applicationtensor_d_basevaddr, uint64_t applicationtensor_d_stride)
+{
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, applicationtensor_d_basevaddr, applicationtensor_d_stride, CUTE_INST_FUNCT_CONFIG_TENSOR_D);
+    return res1;
+}
+
+// 配置张量维度(M,N,K)，对于卷积则是(ohow,oc,ic)
+// 返回值: 未使用
+uint64_t CUTE_CONFIG_TENSOR_DIM(uint64_t application_m, uint64_t application_n, uint64_t application_k, uint64_t kernel_stride)
+{
+    uint64_t cfgData1 = CUTE_ASSEMBLY_CONFIG_TENSOR_DIM_CFGDATA1(application_m, application_n, application_k);
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, cfgData1, kernel_stride, CUTE_INST_FUNCT_CONFIG_TENSOR_DIM);
+    return res1;
+}
+
+// 配置卷积相关参数（element_type, bias_type, kernel_size等）
+// 返回值: 未使用
+uint64_t CUTE_CONFIG_CONV_PARAMS(uint64_t element_type, uint64_t bias_type, uint64_t transpose_result, uint64_t conv_stride, uint64_t conv_oh_max, uint64_t conv_ow_max, uint64_t kernel_size, uint64_t conv_oh_per_add, uint64_t conv_ow_per_add, uint64_t conv_oh_index, uint64_t conv_ow_index)
+{
+    uint64_t cfgData1 = CUTE_ASSEMBLY_CONFIG_CONV_PARAMS_CFGDATA1(element_type, bias_type, transpose_result, conv_stride, conv_oh_max, conv_ow_max);
+    uint64_t cfgData2 = CUTE_ASSEMBLY_CONFIG_CONV_PARAMS_CFGDATA2(kernel_size, conv_oh_per_add, conv_ow_per_add, conv_oh_index, conv_ow_index);
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, cfgData1, cfgData2, CUTE_INST_FUNCT_CONFIG_CONV_PARAMS);
+    return res1;
+}
+
+// 配置A Scale（量化参数）的基地址
+// 返回值: 未使用
+uint64_t CUTE_CONFIG_SCALE_A(uint64_t applicationscale_a_basevaddr)
+{
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, applicationscale_a_basevaddr, 0, CUTE_INST_FUNCT_CONFIG_SCALE_A);
+    return res1;
+}
+
+// 配置B Scale（量化参数）的基地址
+// 返回值: 未使用
+uint64_t CUTE_CONFIG_SCALE_B(uint64_t applicationscale_b_basevaddr)
+{
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, applicationscale_b_basevaddr, 0, CUTE_INST_FUNCT_CONFIG_SCALE_B);
+    return res1;
+}
+
+// 清除队尾的宏指令
+// 返回值: 未使用
+uint64_t CUTE_CLEAR_INST(void)
+{
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, 0, 0, CUTE_INST_FUNCT_CLEAR_INST);
+    return res1;
+}
+
+// 查询当前完成宏指令的尾编号位置
+// 返回值: 返回已完成宏指令的尾编号位置
+uint64_t CUTE_QUERY_INST(void)
+{
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, 0, 0, CUTE_INST_FUNCT_QUERY_INST);
+    return res1;
+}
+
+// 保留指令（空操作）
+// 返回值: 未使用
+uint64_t CUTE_RESERVED(void)
+{
+    uint64_t res1=0;
+    YGJK_INS_RRR(res1, 0, 0, CUTE_INST_FUNCT_RESERVED);
+    return res1;
+}
+
+
+#endif // CUTE_INSTRUCTION_H

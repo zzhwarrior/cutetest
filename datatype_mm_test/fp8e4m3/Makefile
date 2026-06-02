@@ -3,7 +3,9 @@
 #################################
 
 # Change PREFIX to your toolchain prefix
-PREFIX = /home/yuanbin/gcc14-rv-baremetal-rvv-toolchain/bin/riscv64-unknown-elf-
+CUTEROOT = ${PWD}/../../..
+RVVTOOLCHAIN = ${CUTEROOT}/tool/riscv
+PREFIX = ${RVVTOOLCHAIN}/bin/riscv64-unknown-elf-
 
 GCC = $(PREFIX)gcc
 CXX = $(PREFIX)g++

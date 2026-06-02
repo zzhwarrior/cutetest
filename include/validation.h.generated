@@ -1,0 +1,64 @@
+/**
+ * Auto-generated from CUTEParameters.scala
+ * DO NOT EDIT MANUALLY
+ * Generated at: Mon Apr 27 16:33:14 AST 2026
+ */
+
+#ifndef CUTE_VALIDATION_H
+#define CUTE_VALIDATION_H
+
+#include <stdint.h>
+#include <stdbool.h>
+
+// Hardware Parameters (from CuteParams)
+#define CUTE_OUTSIDE_DATA_WIDTH 512
+#define CUTE_MEMORY_DATA_WIDTH 64
+#define CUTE_VECTOR_WIDTH 256
+#define CUTE_MMU_ADDR_WIDTH 39
+
+// Tensor Dimensions
+#define CUTE_TENSOR_M 64
+#define CUTE_TENSOR_N 64
+#define CUTE_TENSOR_K 64
+
+// Matrix Dimensions (for TE execution)
+#define CUTE_MATRIX_M 4
+#define CUTE_MATRIX_N 4
+
+// Buffer Depths
+#define CUTE_RESULT_FIFO_DEPTH 8
+#define CUTE_VEC_TASK_INST_BUFFER_DEPTH 32
+#define CUTE_VEC_TASK_INST_BUFFER_SIZE 8
+#define CUTE_VEC_TASK_DATA_BUFFER_DEPTH 4
+
+// Cache Configuration
+#define CUTE_LLC_SOURCE_MAX_NUM 64
+#define CUTE_MEMORY_SOURCE_MAX_NUM 64
+
+// Convolution Parameters
+#define CUTE_CONVOLUTION_DIM_MAX 32
+#define CUTE_CONVOLUTION_INPUT_MAX 16383
+#define CUTE_KERNEL_SIZE_MAX 15
+#define CUTE_STRIDE_SIZE_MAX 3
+#define CUTE_APPLICATION_MAX_TENSOR_SIZE 65535
+
+// Scratchpad Configuration (derived from CuteParams)
+#define CUTE_REDUCE_GROUP_SIZE 2
+#define CUTE_REDUCE_WIDTH 256
+#define CUTE_RESULT_WIDTH 32
+
+// MMU Configuration (from CuteMMUParams)
+#define CUTE_MMU_VPN_BITS 12
+#define CUTE_MMU_PPN_BITS 12
+#define CUTE_MMU_PGIDX_BITS 12
+#define CUTE_MMU_VADDR_BITS 39
+#define CUTE_MMU_PADDR_BITS 39
+#define CUTE_MMU_CORE_PADDR_BITS 64
+
+// FPE Configuration (from CuteFPEParams)
+#define CUTE_FPE_MIN_GROUP_SIZE 16
+#define CUTE_FPE_MIN_DATA_TYPE_WIDTH 4
+#define CUTE_FPE_COMP_TREE_LAYERS 4
+#define CUTE_FPE_FP8_COMP_TREE_LAYERS 4
+
+#endif // CUTE_VALIDATION_H

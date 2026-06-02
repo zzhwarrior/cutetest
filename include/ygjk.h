@@ -17,16 +17,6 @@
     (rs2    <<(7+5+1+1+1+5))    | \
     (funct7 <<(7+5+1+1+1+5+5))
 
-/*#define YGJK_INS_RRR(rd, rs1, rs2,fun)                      \ 
-do{                                                           \
-    register volatile long ins_c __asm__("t0");             \
-    register volatile long ins_a __asm__("t1"); \
-    ins_a = rs1; \
-    register volatile long ins_b __asm__("t2") = (long)rs2; \
-    __asm__ __volatile__ (".word " GET_VALUE(YGJK_BIT(CUSTOM0,5,1,1,1,6,7,fun)) "\n\t");              \
-    rd = ins_a;                                             \
-}while(0)*/
-
 #define YGJK_CTRL_FUNC(fun)                      \
 {                                                           \
     __asm__ __volatile__ (                                  \

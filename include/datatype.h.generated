@@ -1,0 +1,74 @@
+/**
+ * Auto-generated from CUTEParameters.scala
+ * DO NOT EDIT MANUALLY
+ * Generated at: Mon Apr 27 16:33:14 AST 2026
+ */
+
+#ifndef CUTE_DATATYPE_H
+#define CUTE_DATATYPE_H
+
+// Element Type Definitions
+#define CUTEDataTypeI8I8I32 0  // Int8 * Int8 -> Int32
+#define CUTEDataTypeF16F16F32 1  // FP16 * FP16 -> FP32
+#define CUTEDataTypeBF16BF16F32 2  // BF16 * BF16 -> FP32
+#define CUTEDataTypeTF32TF32F32 3  // TF32 * TF32 -> FP32
+#define CUTEDataTypeI8U8I32 4  // Int8 * UInt8 -> Int32
+#define CUTEDataTypeU8I8I32 5  // UInt8 * Int8 -> Int32
+#define CUTEDataTypeU8U8I32 6  // UInt8 * UInt8 -> Int32
+#define CUTEDataTypeMxfp8e4m3F32 7  // MXFP8 E4M3 -> FP32
+#define CUTEDataTypeMxfp8e5m2F32 8  // MXFP8 E5M2 -> FP32
+#define CUTEDataTypenvfp4F32 9  // NVFP4 -> FP32
+#define CUTEDataTypemxfp4F32 10  // MXFP4 -> FP32
+#define CUTEDataTypefp8e4m3F32 11  // FP8 E4M3 -> FP32
+#define CUTEDataTypefp8e5m2F32 12  // FP8 E5M2 -> FP32
+
+#define CUTE_MAX_ELEMENT_TYPE 12
+
+// Data Type Bit Width Queries
+#define CUTE_GET_ADATA_BITWIDTH(elem_type) \
+    ((elem_type) == 0 ? 8 : \
+    ((elem_type) == 1 ? 16 : \
+    ((elem_type) == 2 ? 16 : \
+    ((elem_type) == 3 ? 32 : \
+    ((elem_type) == 4 ? 8 : \
+    ((elem_type) == 5 ? 8 : \
+    ((elem_type) == 6 ? 8 : \
+    ((elem_type) == 7 ? 8 : \
+    ((elem_type) == 8 ? 8 : \
+    ((elem_type) == 9 ? 4 : \
+    ((elem_type) == 10 ? 4 : \
+    ((elem_type) == 11 ? 8 : \
+    ((elem_type) == 12 ? 8 : \
+    32)))))))))))))
+
+// Data Type Name Strings
+#define CUTE_DATATYPE_NAME(elem_type) \
+    ((elem_type) == 0 ? "I8I8I32" : \
+    ((elem_type) == 1 ? "F16F16FP32" : \
+    ((elem_type) == 2 ? "BF16BF16FP32" : \
+    ((elem_type) == 3 ? "TFP32TFP32FP32" : \
+    ((elem_type) == 4 ? "I8U8I32" : \
+    ((elem_type) == 5 ? "U8I8I32" : \
+    ((elem_type) == 6 ? "U8U8I32" : \
+    ((elem_type) == 7 ? "Mxfp8e4m3FP32" : \
+    ((elem_type) == 8 ? "Mxfp8e5m2FP32" : \
+    ((elem_type) == 9 ? "nvfp4FP32" : \
+    ((elem_type) == 10 ? "mxfp4FP32" : \
+    ((elem_type) == 11 ? "fp8e4m3FP32" : \
+    ((elem_type) == 12 ? "fp8e5m2FP32" : \
+    "Unknown")))))))))))))
+
+// Stride Calculation Macros
+#define CUTE_CALC_M_STRIDE(elem_type, k) \
+    ((k) * CUTE_GET_ADATA_BITWIDTH(elem_type) / 8)
+
+#define CUTE_CALC_N_STRIDE(elem_type, k) \
+    ((k) * CUTE_GET_ADATA_BITWIDTH(elem_type) / 8)
+
+#define CUTE_CALC_K_STRIDE_A(elem_type) \
+    (CUTE_GET_ADATA_BITWIDTH(elem_type) / 8)
+
+#define CUTE_CALC_K_STRIDE_B(elem_type) \
+    (CUTE_GET_ADATA_BITWIDTH(elem_type) / 8)
+
+#endif // CUTE_DATATYPE_H

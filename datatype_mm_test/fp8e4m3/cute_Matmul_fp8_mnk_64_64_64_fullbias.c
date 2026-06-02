@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <riscv-pk/encoding.h>
+// #include <riscv-pk/encoding.h>
 // #include <riscv-pk/marchid.h>
 #include "marchid.h"
 #include <stdint.h>
@@ -16,10 +16,6 @@ static uint64_t read_cycles() {
 
 int main(void)
 {
-    /*Hello world from core 0???*/
-    uint64_t marchid = read_csr(marchid);
-    const char *march = get_march(marchid);
-    printf("Hello world from core 0, a %s\n", march);
     // 输出mstatus,16进制
     unsigned long mstatus;
     asm volatile("csrr %0, mstatus" : "=r"(mstatus));
