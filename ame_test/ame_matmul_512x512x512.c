@@ -7,18 +7,19 @@
 #include <stdint.h>
 #include <string.h>
 #include "ame.h"
-#include "matmul_value_mnk_256_256_128.h"
-#include "matmul_cref_256_256_128.h"
-#define APPLICATION_M  256
-#define APPLICATION_N  256
-#define APPLICATION_K  128
+#include "matmul_value_mnk_512_512_512.h"
+#include "matmul_cref_512_512_512.h"
+#define APPLICATION_M  512
+#define APPLICATION_N  512
+#define APPLICATION_K  512
 #define TILE_M         128
 #define TILE_N         128
 #define TILE_K         64
 #define TILES_M        (APPLICATION_M / TILE_M)   // 2
 #define TILES_N        (APPLICATION_N / TILE_N)   // 2
 #define TILES_K        (APPLICATION_K / TILE_K)   // 2
-
+#define C_BASE_ADDR 0x81000000UL
+static int32_t (*c)[256] = (int32_t (*)[256])C_BASE_ADDR;
 // Input matrices (int8), row-major - provided by matmul_value header
 // Output matrix (int32) - provided by matmul_value header
 
@@ -32,6 +33,8 @@ int main(void) {
     //for (int j = 0; j < APPLICATION_N; j++)
         //c[0][j] =0;
     printf("init done\n");
+    uint64_t cycle_start, cycle_end;
+    
 
     ame_settilem(TILE_M);
     ame_settilen(TILE_N);
@@ -40,10 +43,8 @@ int main(void) {
     uint64_t a_stride = APPLICATION_K * sizeof(int8_t);   // 128 bytes per row
     uint64_t b_stride = APPLICATION_K * sizeof(int8_t);   // 128 bytes per row
     uint64_t c_stride = APPLICATION_N * sizeof(int32_t);  // 1024 bytes per row
-
-    uint64_t cycle_start, cycle_end;
     asm volatile("rdcycle %0" : "=r"(cycle_start));
-    int acct = 0;
+    int acct = 0; 
     for (int mt = 0; mt < TILES_M; mt++) {
         for (int nt = 0; nt < TILES_N; nt++) {
             uint64_t c_base = (uint64_t)&c[mt * TILE_M][nt * TILE_N];
@@ -55,23 +56,17 @@ int main(void) {
                     int cur = kt & 1;
                     if (cur == 0) {
                         ame_mlae8(TR0, (uint64_t)&a[mt * TILE_M][kt * TILE_K], a_stride);
-                        //asm volatile("fence" ::: "memory");
                         ame_mlbe8(TR2, (uint64_t)&b[nt * TILE_N][kt * TILE_K], b_stride);
-                        //asm volatile("fence" ::: "memory");
                         ame_mmacc_w_b(ACC0, TR0, TR2);
-                        //asm volatile("fence" ::: "memory");
                     } else {
                         ame_mlae8(TR1, (uint64_t)&a[mt * TILE_M][kt * TILE_K], a_stride);
-                        //asm volatile("fence" ::: "memory");
                         ame_mlbe8(TR3, (uint64_t)&b[nt * TILE_N][kt * TILE_K], b_stride);
-                        //asm volatile("fence" ::: "memory");
                         ame_mmacc_w_b(ACC0, TR1, TR3);
-                        //asm volatile("fence" ::: "memory");
                     }
                     //ame_fence();
                 }
                 ame_msce32(ACC0, c_base, c_stride);
-                //asm volatile("fence" ::: "memory");
+                //ame_fence();
                 acct++;
             }
             else{
@@ -80,29 +75,23 @@ int main(void) {
                     int cur = kt & 1;
                     if (cur == 0) {
                         ame_mlae8(TR0, (uint64_t)&a[mt * TILE_M][kt * TILE_K], a_stride);
-                        //asm volatile("fence" ::: "memory");
                         ame_mlbe8(TR2, (uint64_t)&b[nt * TILE_N][kt * TILE_K], b_stride);
-                        //asm volatile("fence" ::: "memory");
                         ame_mmacc_w_b(ACC1, TR0, TR2);
-                        //asm volatile("fence" ::: "memory");
                     } else {
                         ame_mlae8(TR1, (uint64_t)&a[mt * TILE_M][kt * TILE_K], a_stride);
-                        //asm volatile("fence" ::: "memory");
                         ame_mlbe8(TR3, (uint64_t)&b[nt * TILE_N][kt * TILE_K], b_stride);
-                        //asm volatile("fence" ::: "memory");
                         ame_mmacc_w_b(ACC1, TR1, TR3);
-                        //asm volatile("fence" ::: "memory");
                     }
+                    //ame_fence();
                 }
                 ame_msce32(ACC1, c_base, c_stride);
-                //asm volatile("fence" ::: "memory");
+                //ame_fence();
                 acct--;
             }
         }
     }
-    asm volatile("fence" ::: "memory");
-    // Wait for all AME operations to complete
-    //while (!ame_is_idle()) {}
+      // Wait for all AME operations to complete
+    while (!ame_is_idle()) {}
 
     asm volatile("rdcycle %0" : "=r"(cycle_end));
     printf("AME GEMM done in %lu cycles\n", cycle_end - cycle_start);

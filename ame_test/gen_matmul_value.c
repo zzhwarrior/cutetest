@@ -70,33 +70,6 @@ int main(int argc, char *argv[]) {
     }
     fprintf(f, "};\n\n");
 
-    // C matrix pointer at fixed address
-    fprintf(f, "// C[%d][%d] int32, output matrix at fixed address to avoid tohost conflict\n", M, N);
-    fprintf(f, "#define C_BASE_ADDR 0x%lxUL\n", c_base);
-    fprintf(f, "static int32_t (*c)[%d] = (int32_t (*)[%d])C_BASE_ADDR;\n\n", N, N);
-
-    // Reference computation function
-    fprintf(f, "// Reference: compute C_ref = A * B^T on CPU\n");
-    fprintf(f, "static int32_t c_ref[%d][%d];\n", M, N);
-    fprintf(f, "static void compute_reference(void) {\n");
-    fprintf(f, "    for (int i = 0; i < %d; i++)\n", M);
-    fprintf(f, "        for (int j = 0; j < %d; j++) {\n", N);
-    fprintf(f, "            int32_t sum = 0;\n");
-    fprintf(f, "            for (int k = 0; k < %d; k++)\n", K);
-    fprintf(f, "                sum += (int32_t)a[i][k] * (int32_t)b[j][k];\n");
-    fprintf(f, "            c_ref[i][j] = sum;\n");
-    fprintf(f, "        }\n");
-    fprintf(f, "}\n\n");
-
-    // Verify function
-    fprintf(f, "static int verify_result(void) {\n");
-    fprintf(f, "    int errors = 0;\n");
-    fprintf(f, "    for (int i = 0; i < %d; i++)\n", M);
-    fprintf(f, "        for (int j = 0; j < %d; j++)\n", N);
-    fprintf(f, "            if (c[i][j] != c_ref[i][j]) errors++;\n");
-    fprintf(f, "    return errors;\n");
-    fprintf(f, "}\n\n");
-
     fprintf(f, "#endif\n");
     fclose(f);
 

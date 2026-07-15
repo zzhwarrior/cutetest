@@ -25,7 +25,7 @@ libgloss_specs := htif_nano.specs
 CFLAGS += -specs=$(libgloss_specs)
 LDFLAGS += -specs=$(libgloss_specs)
 
-PROGRAMS = ame_matmul_128x128x64 ame_matmul_256x256x128
+PROGRAMS =ame_matmul_128x128x64 ame_matmul_256x256x128 ame_matmul_512x512x512 test l2_test
 
 .DEFAULT_GOAL := default
 

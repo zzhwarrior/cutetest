@@ -1,84 +1,53 @@
-// AME Test: 128x128x64 INT8 Matrix Multiplication
-// Single tile operation: the entire GEMM fits in one tile (no tiling loop needed)
-// C[128][128] += A[128][64] * B[128][64]^T, int8 -> int32 accumulator
-
-#include <stdio.h>
 #include <stdint.h>
-#include <string.h>
-#include "ame.h"
-#include "marchid.h"
-#include "matmul_value_mnk_128_128_64.h"
-#include "matmul_cref_128_128_64.h"
-#define APPLICATION_M 128
-#define APPLICATION_N 128
-#define APPLICATION_K 64
-#define ARRAY_BASE_ADDR  0x81000000
+#include <stdio.h>
 
-int main(void) {
-    printf("AME Test: %dx%dx%d INT8 GEMM (single tile)\n",
-           APPLICATION_M, APPLICATION_N, APPLICATION_K);
-    // 访问数组（通过指针）
-    volatile int32_t (*c)[APPLICATION_N] = (volatile int32_t (*)[APPLICATION_N])ARRAY_BASE_ADDR;
-    for (int i = 0; i < APPLICATION_M; i++)
-        for (int j = 0; j < APPLICATION_N; j++)
-            c[i][j] =0;
+static inline uint64_t read_cycle() {
+    uint64_t cycle;
+    asm volatile ("rdcycle %0" : "=r" (cycle));
+    return cycle;
+}
 
-    int errors = 0;
-    printf("init done\n");
+// 32KB working set: fits in L2 (256KB) but NOT in L1 DCache (16KB)
+#define ARRAY_SIZE 8192   // 8192 x 4B = 32KB
+#define STRIDE     16     // 16 x 4B = 64B = 1 cache line
+#define ITERATIONS 5
 
-    // --- AME single-tile GEMM ---
-    uint64_t a_stride = APPLICATION_K * sizeof(int8_t);   // 64 bytes per row
-    uint64_t b_stride = APPLICATION_K * sizeof(int8_t);   // 64 bytes per row
-    uint64_t c_stride = APPLICATION_N * sizeof(int32_t);  // 512 bytes per row
-    
-    // Configure tile dimensions (entire matrix fits in one tile)
-    ame_settilem(APPLICATION_M);
-    ame_settilen(APPLICATION_N);
-    ame_settilek(APPLICATION_K);
+volatile uint32_t test_array[ARRAY_SIZE];
 
-    uint64_t cycle_start, cycle_end;
-    asm volatile("rdcycle %0" : "=r"(cycle_start));
+int main() {
+    uint64_t start_cycle, end_cycle;
+    uint32_t dummy = 0;
 
-    // 1. Zero accumulator acc0 (bank 0)
-    ame_mzero(ACC0);
-
-    // 2. Load A[128][64] into tr0 (A bank 0)
-    ame_mlae8(TR0, (uint64_t)a, a_stride);
-
-    // 3. Load B[128][64] into tr2 (B bank 0)
-    ame_mlbe8(TR2, (uint64_t)b, b_stride);
-
-    // 4. Compute: acc0 += tr0 * tr2^T  (A-bank0 * B-bank0 -> C-bank0)
-    ame_mmacc_w_b(ACC0, TR0, TR2);
-
-    // 5. Store acc0 -> C[128][128]
-    ame_msce32(ACC0, (uint64_t)c, c_stride);
-
-    uint64_t res1 = 1;  
-    res1 = ame_is_idle();
-    while(!res1)
-    {
-        res1 = ame_is_idle();
+    printf("=== Phase 1: Warmup (fills cache hierarchy) ===\n");
+    uint64_t warmup_start = read_cycle();
+    for (int i = 0; i < ARRAY_SIZE; i += STRIDE) {
+        test_array[i] = i;
     }
-    asm volatile("rdcycle %0" : "=r"(cycle_end));
-    printf("AME GEMM done in %lu cycles\n", cycle_end - cycle_start);
+    uint64_t warmup_cycles = read_cycle() - warmup_start;
+    uint64_t warmup_accesses = ARRAY_SIZE / STRIDE;
+    printf("Warmup accesses: %lu, cycles: %lu, avg: %lu cyc/line\n",
+           warmup_accesses, warmup_cycles, warmup_cycles / warmup_accesses);
 
-    
+    // fence: ensure all warmup writes are visible before measurement
+    asm volatile ("fence" ::: "memory");
 
-    for (int j = 0; j < APPLICATION_N; j++) {
-        if (c[0][j] != c_ref[0][j]) {
-            if (errors < 10)
-                printf("MISMATCH C[%d][%d]: got %d, expected %d\n",
-                        0, j, c[0][j], c_ref[0][j]);
-            errors++;
+    printf("=== Phase 2: Measurement (should hit in cache if L2 works) ===\n");
+    start_cycle = read_cycle();
+    for (int iter = 0; iter < ITERATIONS; iter++) {
+        for (int i = 0; i < ARRAY_SIZE; i += STRIDE) {
+            dummy += test_array[i];
         }
     }
+    end_cycle = read_cycle();
 
-    if (errors == 0) {
-        printf("PASS! All %d elements match.\n", APPLICATION_M * APPLICATION_N);
-    } else {
-        printf("FAIL! %d mismatches out of %d elements.\n",
-               errors, APPLICATION_M * APPLICATION_N);
-    }
+    uint64_t total_cycles   = end_cycle - start_cycle;
+    uint64_t total_accesses = (uint64_t)(ARRAY_SIZE / STRIDE) * ITERATIONS;
+    uint64_t cycles_per_access = total_cycles / total_accesses;
+
+    printf("Total Accesses: %lu\n", total_accesses);
+    printf("Total Cycles: %lu\n", total_cycles);
+    printf("Average Cycles per Cache Line Access: %lu\n", cycles_per_access);
+    printf("Dummy value (ignore): %u\n", dummy);
+
     return 0;
 }

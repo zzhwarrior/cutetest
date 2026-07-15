@@ -223,7 +223,7 @@
     )
 
 // fence.m: RoCC CUSTOM1, funct=0x70, no GPR operands, no writeback
-#define AME_FENCE_M_ENC  ROCC_BIT(0x2B, 0, 0, 0, 0, 0, 0, 0x70)
+#define AME_FENCE_M_ENC  ROCC_BIT(0x2B, GPR_T0, 0, 0, 1, 0, 0, 0x70)
 // mstatus: RoCC CUSTOM1, funct=0x71, xd=1 (writes rd), rd=t0(5)
 #define AME_MSTATUS_ENC  ROCC_BIT(0x2B, GPR_T0, 0, 0, 1, 0, 0, 0x71)
 
