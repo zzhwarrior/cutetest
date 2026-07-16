@@ -31,6 +31,9 @@ int main(void) {
     //for (int i = 0; i < APPLICATION_M; i++)
     //for (int j = 0; j < APPLICATION_N; j++)
         //c[0][j] =0;
+    printf("a base: %p (expected 0x81008000 for TCM build)\n", (void *)a);
+    printf("b base: %p (expected 0x81000000 for TCM build)\n", (void *)b);
+    printf("c base: %p (expected 0x82000000)\n", (void *)c);
     printf("init done\n");
 
     ame_settilem(TILE_M);

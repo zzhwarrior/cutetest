@@ -39,6 +39,11 @@ PROGRAMS =ame_matmul_128x128x64 ame_matmul_256x256x128 ame_matmul_512x512x512 te
 %.riscv: %.o
 	$(GCC) $(LDFLAGS) $< -o $@
 
+# TCM variant: places a[] and b[] directly at 0x81000000 via htif_tcm.ld,
+# so no runtime memcpy is needed.
+%_tcm.riscv: %.o
+	$(GCC) $(LDFLAGS) -T htif_tcm.ld $< -o $@
+
 %.dump: %.riscv
 	$(OBJDUMP) -D -S $< > $@
 
