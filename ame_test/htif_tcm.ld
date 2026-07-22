@@ -113,26 +113,33 @@ SECTIONS
     . = ALIGN (8);
     PROVIDE (_end = .);
 
-    /* TCM region: initialized data placed directly at TCM base address.
-     * Arrays marked __attribute__((section(".tcm_data"))) land here.
-     * The ELF loader writes this segment to 0x81000000 at startup,
-     * so no runtime memcpy is needed. */
-    .tcm_data 0x81000000 : {
-        *(.tcm_data .tcm_data.*)
-    }
-
-    /* Reserve heap space */
+    /* Reserve heap in DRAM (before .tcm_data placement, so heap/stack stay
+     * out of the TCM address range). */
     PROVIDE(__heap_size = 128K);
     . += __heap_size;
     . = ALIGN (4K);
     PROVIDE (__heap_end = .);
 
-    /* Place Thread Control Block (TCB) at bottom of hart stack */
+    /* Stack lives just above heap, still in DRAM. This MUST be defined before
+     * .tcm_data below, otherwise the location counter gets moved to 0x81000000+
+     * by .tcm_data and __stack_start would land inside TCM, causing all stack
+     * writes to be intercepted by the L2 TCM bypass and never reach DRAM
+     * (breaks HTIF syscall descriptors → "bad syscall #0"). */
     PROVIDE (__tcb_size = __tbss_end - __tdata_start);
     PROVIDE (__stack_align = MAX (ALIGNOF (.tdata), 0x10));
     PROVIDE (__stack_start = ALIGN (__stack_align));
     PROVIDE (__stack_shift = LOG2CEIL( ALIGN (__stack_size_min + __tcb_size, __stack_align)));
     PROVIDE (__stack_size = 1 << __stack_shift);
+
+    /* TCM region: initialized data placed directly at TCM base address.
+     * Arrays marked __attribute__((section(".tcm_data"))) land here.
+     * The ELF loader writes this segment to 0x81000000 at startup,
+     * so no runtime memcpy is needed.
+     * Placed AFTER heap/stack symbols so the location counter jump to
+     * 0x81000000 does not pollute those addresses. */
+    .tcm_data 0x81000000 : {
+        *(.tcm_data .tcm_data.*)
+    }
 
     /* Default boot hart */
     PROVIDE (__boot_hart = 0);

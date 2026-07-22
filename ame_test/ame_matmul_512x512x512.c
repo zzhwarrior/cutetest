@@ -18,7 +18,7 @@
 #define TILES_M        (APPLICATION_M / TILE_M)   // 2
 #define TILES_N        (APPLICATION_N / TILE_N)   // 2
 #define TILES_K        (APPLICATION_K / TILE_K)   // 2
-#define C_BASE_ADDR 0x81000000UL
+#define C_BASE_ADDR 0x83000000UL
 static int32_t (*c)[256] = (int32_t (*)[256])C_BASE_ADDR;
 // Input matrices (int8), row-major - provided by matmul_value header
 // Output matrix (int32) - provided by matmul_value header
@@ -29,9 +29,10 @@ int main(void) {
            APPLICATION_M, APPLICATION_N, APPLICATION_K,
            TILE_M, TILE_N, TILE_K);
 
-    //for (int i = 0; i < APPLICATION_M; i++)
-    //for (int j = 0; j < APPLICATION_N; j++)
-        //c[0][j] =0;
+
+    printf("a base: %p (expected 0x81040000 for TCM build)\n", (void *)a);
+    printf("b base: %p (expected 0x81000000 for TCM build)\n", (void *)b);
+    printf("c base: %p (expected 0x83000000)\n", (void *)c);
     printf("init done\n");
     uint64_t cycle_start, cycle_end;
     
@@ -44,6 +45,7 @@ int main(void) {
     uint64_t b_stride = APPLICATION_K * sizeof(int8_t);   // 128 bytes per row
     uint64_t c_stride = APPLICATION_N * sizeof(int32_t);  // 1024 bytes per row
     asm volatile("rdcycle %0" : "=r"(cycle_start));
+    
     int acct = 0; 
     for (int mt = 0; mt < TILES_M; mt++) {
         for (int nt = 0; nt < TILES_N; nt++) {
@@ -91,7 +93,8 @@ int main(void) {
         }
     }
       // Wait for all AME operations to complete
-    while (!ame_is_idle()) {}
+    asm volatile("fence" ::: "memory");
+    //while (!ame_is_idle()) {}
 
     asm volatile("rdcycle %0" : "=r"(cycle_end));
     printf("AME GEMM done in %lu cycles\n", cycle_end - cycle_start);
