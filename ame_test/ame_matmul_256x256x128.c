@@ -109,10 +109,12 @@ int main(void) {
 
     asm volatile("rdcycle %0" : "=r"(cycle_end));
     printf("AME GEMM done in %lu cycles\n", cycle_end - cycle_start);
+    // Check c[i][0..9] against c_ref for every row. Prior version compared
+    // c[0][j] on every iteration, silently skipping rows 1..M-1.
     int errors = 0;
-     for (int i = 0; i < APPLICATION_M; i++) {
+    for (int i = 0; i < APPLICATION_M; i++) {
         for (int j = 0; j < 10; j++) {
-            if (c[0][j] != c_ref[0][j]) {
+            if (c[i][j] != c_ref[i][j]) {
                 if (errors < 10)
                     printf("MISMATCH C[%d][%d]: got %d, expected %d\n",
                            i, j, c[i][j], c_ref[i][j]);
@@ -123,7 +125,7 @@ int main(void) {
     if (errors == 0) {
         printf("PASS! elements match.\n");
     } else {
-        printf("FAIL! mismatches.\n");
+        printf("FAIL! %d mismatches.\n", errors);
     }
     return 0;
 }

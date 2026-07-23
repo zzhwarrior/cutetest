@@ -19,7 +19,11 @@
 #define TILES_N        (APPLICATION_N / TILE_N)   // 2
 #define TILES_K        (APPLICATION_K / TILE_K)   // 2
 #define C_BASE_ADDR 0x83000000UL
-static int32_t (*c)[256] = (int32_t (*)[256])C_BASE_ADDR;
+// Row width MUST equal APPLICATION_N so &c[i][j] steps by APPLICATION_N*4
+// bytes per row, matching the c_stride used by ame_msce32. The old [256]
+// value here was a 256x256 leftover — it silently miscomputed &c[i][*] for
+// i > 0 because pointer arithmetic used 1024 B/row instead of 2048 B/row.
+static int32_t (*c)[APPLICATION_N] = (int32_t (*)[APPLICATION_N])C_BASE_ADDR;
 // Input matrices (int8), row-major - provided by matmul_value header
 // Output matrix (int32) - provided by matmul_value header
 
@@ -98,10 +102,13 @@ int main(void) {
 
     asm volatile("rdcycle %0" : "=r"(cycle_end));
     printf("AME GEMM done in %lu cycles\n", cycle_end - cycle_start);
+    // Verify c[i][0..9] against c_ref for every row. Prior version compared
+    // c[0][j] on every iteration, so it never actually checked rows 1..M-1
+    // (the whole mt=1 half of the tile grid went unverified).
     int errors = 0;
-     for (int i = 0; i < APPLICATION_M; i++) {
+    for (int i = 0; i < APPLICATION_M; i++) {
         for (int j = 0; j < 10; j++) {
-            if (c[0][j] != c_ref[0][j]) {
+            if (c[i][j] != c_ref[i][j]) {
                 if (errors < 10)
                     printf("MISMATCH C[%d][%d]: got %d, expected %d\n",
                            i, j, c[i][j], c_ref[i][j]);
@@ -112,7 +119,7 @@ int main(void) {
     if (errors == 0) {
         printf("PASS! elements match.\n");
     } else {
-        printf("FAIL! mismatches.\n");
+        printf("FAIL! %d mismatches.\n", errors);
     }
     return 0;
 }

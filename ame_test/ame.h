@@ -155,6 +155,21 @@
 // mfmacc.s.e5 (fp8e5m2->fp32): s_size=00, d_size=10, size_sup=0b010 (inst[25]=0,inst[24]=1,inst[23]=0=E5M2)
 #define AME_MFMACC_S_E5(md, ms1, ms2)  AME_MATMUL(FUNC4_FLOAT, 0b010, ms2, ESIZE_8, ms1, ESIZE_32, md)
 
+// --- Additional float matmul encodings (matches AMEInstConfigs FUNCT_MFMACC_*) ---
+// mfmacc.d (fp64 -> fp64), non-widen: s_size=11, d_size=11, size_sup=0b000
+#define AME_MFMACC_D(md, ms1, ms2)      AME_MATMUL(FUNC4_FLOAT, 0b000, ms2, ESIZE_64, ms1, ESIZE_64, md)
+// mfmacc.d.s (fp32 -> fp64), double-widen: s_size=10, d_size=11, size_sup=0b010
+#define AME_MFMACC_D_S(md, ms1, ms2)    AME_MATMUL(FUNC4_FLOAT, 0b010, ms2, ESIZE_32, ms1, ESIZE_64, md)
+// mfmacc.h.e4 (fp8e4m3 -> fp16), double-widen: s_size=00, d_size=01, size_sup=0b011
+#define AME_MFMACC_H_E4(md, ms1, ms2)   AME_MATMUL(FUNC4_FLOAT, 0b011, ms2, ESIZE_8, ms1, ESIZE_16, md)
+// mfmacc.h.e5 (fp8e5m2 -> fp16), double-widen: s_size=00, d_size=01, size_sup=0b010
+#define AME_MFMACC_H_E5(md, ms1, ms2)   AME_MATMUL(FUNC4_FLOAT, 0b010, ms2, ESIZE_8, ms1, ESIZE_16, md)
+// mfmacc.bf16.e4 (fp8e4m3 -> bf16), double-widen: s_size=00, d_size=01, size_sup=0b111
+// (inst[25]=1 for bf16 nuance, inst[24]=1 widen, inst[23]=1 = E4M3)
+#define AME_MFMACC_BF16_E4(md, ms1, ms2) AME_MATMUL(FUNC4_FLOAT, 0b111, ms2, ESIZE_8, ms1, ESIZE_16, md)
+// mfmacc.bf16.e5 (fp8e5m2 -> bf16), double-widen: size_sup=0b110
+#define AME_MFMACC_BF16_E5(md, ms1, ms2) AME_MATMUL(FUNC4_FLOAT, 0b110, ms2, ESIZE_8, ms1, ESIZE_16, md)
+
 // --- MISC Instructions ---
 // Format: func4[31:28] | uop=11[27:26] | imm3[25:23] | ms2[22:20] | s_size[19:18] | ms1[17:15] | func3=000[14:12] | d_size[11:10] | md[9:7] | opcode[6:0]
 
@@ -226,6 +241,11 @@
 #define AME_FENCE_M_ENC  ROCC_BIT(0x2B, GPR_T0, 0, 0, 1, 0, 0, 0x70)
 // mstatus: RoCC CUSTOM1, funct=0x71, xd=1 (writes rd), rd=t0(5)
 #define AME_MSTATUS_ENC  ROCC_BIT(0x2B, GPR_T0, 0, 0, 1, 0, 0, 0x71)
+// ame_dma_load: RoCC CUSTOM1, funct=0x72, xs1=xs2=1, xd=0. rs1=src(64b),
+// rs2 = (dst << 32) | length. CPU stalls in io.cmd.ready until DMA completes.
+// rs1=t1(6), rs2=t2(7) so the inline-asm scaffolding in AME_ISSUE_WITH_GPR
+// works verbatim.
+#define AME_DMA_LOAD_ENC ROCC_BIT(0x2B, 0, 1, 1, 0, GPR_T1, GPR_T2, 0x72)
 
 // ============================================================
 // High-level API functions
@@ -254,28 +274,138 @@ static inline void ame_release(void) {
 // All register arguments must be compile-time constants (#define values).
 // ============================================================
 
-// Load A (8-bit) into tr_reg: base_addr in t1, stride in t2
-#define ame_mlae8(tr_reg, base_addr, stride) \
-    AME_ISSUE_WITH_GPR(AME_MLAE(ESIZE_8, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+// ------------------------------------------------------------
+// Load helpers (uop=01, ls=0). base_addr in t1, stride in t2.
+// Element size is baked into the macro name (8/16/32/64).
+// ------------------------------------------------------------
 
-// Load B (8-bit) into tr_reg: base_addr in t1, stride in t2
-#define ame_mlbe8(tr_reg, base_addr, stride) \
-    AME_ISSUE_WITH_GPR(AME_MLBE(ESIZE_8, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+// mlae — Load A (non-transposed) into tr_reg
+#define ame_mlae8(tr_reg,  base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLAE(ESIZE_8,  tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mlae16(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLAE(ESIZE_16, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mlae32(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLAE(ESIZE_32, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mlae64(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLAE(ESIZE_64, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
 
-// Zero accumulator acc_reg
-#define ame_mzero(acc_reg) \
-    AME_ISSUE(AME_MZERO(acc_reg))
+// mlbe — Load B (non-transposed) into tr_reg
+#define ame_mlbe8(tr_reg,  base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLBE(ESIZE_8,  tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mlbe16(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLBE(ESIZE_16, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mlbe32(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLBE(ESIZE_32, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mlbe64(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLBE(ESIZE_64, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
 
-// Matrix multiply-accumulate (int8 signed): acc_reg += tr_a * tr_b^T
-// tr_a selects A scratchpad bank (TR0->bank0, TR1->bank1)
-// tr_b selects B scratchpad bank (TR2->bank0, TR3->bank1)
-// acc_reg selects C scratchpad bank (ACC0->bank0, ACC1->bank1)
-#define ame_mmacc_w_b(acc_reg, tr_a, tr_b) \
-    AME_ISSUE(AME_MMACC_W_B(acc_reg, tr_a, tr_b))
+// mlce — Load C (accumulator) into acc_reg (md field carries acc index)
+#define ame_mlce8(acc_reg,  base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLCE(ESIZE_8,  acc_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mlce16(acc_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLCE(ESIZE_16, acc_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mlce32(acc_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLCE(ESIZE_32, acc_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mlce64(acc_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLCE(ESIZE_64, acc_reg, GPR_T1, GPR_T2), base_addr, stride)
 
-// Store acc_reg as 32-bit to memory: base_addr in t1, stride in t2
-#define ame_msce32(acc_reg, base_addr, stride) \
-    AME_ISSUE_WITH_GPR(AME_MSCE(ESIZE_32, acc_reg, GPR_T1, GPR_T2), base_addr, stride)
+// mlate — Load A transposed
+#define ame_mlate8(tr_reg,  base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLATE(ESIZE_8,  tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mlate16(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLATE(ESIZE_16, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mlate32(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLATE(ESIZE_32, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mlate64(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLATE(ESIZE_64, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+
+// mlbte — Load B transposed
+#define ame_mlbte8(tr_reg,  base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLBTE(ESIZE_8,  tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mlbte16(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLBTE(ESIZE_16, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mlbte32(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLBTE(ESIZE_32, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mlbte64(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLBTE(ESIZE_64, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+
+// mlcte — Load C transposed
+#define ame_mlcte8(acc_reg,  base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLCTE(ESIZE_8,  acc_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mlcte16(acc_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLCTE(ESIZE_16, acc_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mlcte32(acc_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLCTE(ESIZE_32, acc_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mlcte64(acc_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MLCTE(ESIZE_64, acc_reg, GPR_T1, GPR_T2), base_addr, stride)
+
+// ------------------------------------------------------------
+// Store helpers (uop=01, ls=1). base_addr in t1, stride in t2.
+// ------------------------------------------------------------
+
+// msae — Store A
+#define ame_msae8(tr_reg,  base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSAE(ESIZE_8,  tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_msae16(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSAE(ESIZE_16, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_msae32(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSAE(ESIZE_32, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_msae64(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSAE(ESIZE_64, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+
+// msbe — Store B
+#define ame_msbe8(tr_reg,  base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSBE(ESIZE_8,  tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_msbe16(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSBE(ESIZE_16, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_msbe32(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSBE(ESIZE_32, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_msbe64(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSBE(ESIZE_64, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+
+// msce — Store C (accumulator) at all element widths
+#define ame_msce8(acc_reg,  base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSCE(ESIZE_8,  acc_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_msce16(acc_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSCE(ESIZE_16, acc_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_msce32(acc_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSCE(ESIZE_32, acc_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_msce64(acc_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSCE(ESIZE_64, acc_reg, GPR_T1, GPR_T2), base_addr, stride)
+
+// msate — Store A transposed
+#define ame_msate8(tr_reg,  base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSATE(ESIZE_8,  tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_msate16(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSATE(ESIZE_16, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_msate32(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSATE(ESIZE_32, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_msate64(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSATE(ESIZE_64, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+
+// msbte — Store B transposed
+#define ame_msbte8(tr_reg,  base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSBTE(ESIZE_8,  tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_msbte16(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSBTE(ESIZE_16, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_msbte32(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSBTE(ESIZE_32, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_msbte64(tr_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSBTE(ESIZE_64, tr_reg, GPR_T1, GPR_T2), base_addr, stride)
+
+// mscte — Store C transposed
+#define ame_mscte8(acc_reg,  base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSCTE(ESIZE_8,  acc_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mscte16(acc_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSCTE(ESIZE_16, acc_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mscte32(acc_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSCTE(ESIZE_32, acc_reg, GPR_T1, GPR_T2), base_addr, stride)
+#define ame_mscte64(acc_reg, base_addr, stride) AME_ISSUE_WITH_GPR(AME_MSCTE(ESIZE_64, acc_reg, GPR_T1, GPR_T2), base_addr, stride)
+
+// ------------------------------------------------------------
+// Misc: mzero (batch-count 1/2/4/8 accumulators cleared).
+// ------------------------------------------------------------
+#define ame_mzero(acc_reg)  AME_ISSUE(AME_MZERO(acc_reg))
+#define ame_mzero2(acc_reg) AME_ISSUE(AME_MZERO2(acc_reg))
+#define ame_mzero4(acc_reg) AME_ISSUE(AME_MZERO4(acc_reg))
+#define ame_mzero8(acc_reg) AME_ISSUE(AME_MZERO8(acc_reg))
+
+// ------------------------------------------------------------
+// Integer matmul: acc_reg += tr_a * tr_b^T (all int8 → int32).
+// Signedness suffix indicates {A_signed, B_signed}:
+//   w_b   = signed  * signed
+//   u_w_b = unsigned * unsigned
+//   su_w_b= signed  * unsigned
+//   us_w_b= unsigned * signed
+// ------------------------------------------------------------
+#define ame_mmacc_w_b(acc_reg, tr_a, tr_b)   AME_ISSUE(AME_MMACC_W_B(acc_reg, tr_a, tr_b))
+#define ame_mmaccu_w_b(acc_reg, tr_a, tr_b)  AME_ISSUE(AME_MMACCU_W_B(acc_reg, tr_a, tr_b))
+#define ame_mmaccsu_w_b(acc_reg, tr_a, tr_b) AME_ISSUE(AME_MMACCSU_W_B(acc_reg, tr_a, tr_b))
+#define ame_mmaccus_w_b(acc_reg, tr_a, tr_b) AME_ISSUE(AME_MMACCUS_W_B(acc_reg, tr_a, tr_b))
+
+// ------------------------------------------------------------
+// Float matmul family. Names match AMEInstConfigs.FUNCT_MFMACC_*.
+// Non-widen: src and dst have identical element size.
+//   ame_mfmacc_h   : fp16   -> fp16
+//   ame_mfmacc_s   : fp32   -> fp32
+//   ame_mfmacc_d   : fp64   -> fp64
+// Double-widen: dst = 2x src.
+//   ame_mfmacc_s_h    : fp16    -> fp32
+//   ame_mfmacc_s_bf16 : bf16    -> fp32
+//   ame_mfmacc_d_s    : fp32    -> fp64
+//   ame_mfmacc_h_e4   : fp8e4m3 -> fp16
+//   ame_mfmacc_h_e5   : fp8e5m2 -> fp16
+//   ame_mfmacc_bf16_e4: fp8e4m3 -> bf16
+//   ame_mfmacc_bf16_e5: fp8e5m2 -> bf16
+// Quad-widen: dst = 4x src.
+//   ame_mfmacc_s_e4 : fp8e4m3 -> fp32
+//   ame_mfmacc_s_e5 : fp8e5m2 -> fp32
+// ------------------------------------------------------------
+#define ame_mfmacc_h(acc_reg, tr_a, tr_b)       AME_ISSUE(AME_MFMACC_H(acc_reg, tr_a, tr_b))
+#define ame_mfmacc_s(acc_reg, tr_a, tr_b)       AME_ISSUE(AME_MFMACC_S(acc_reg, tr_a, tr_b))
+#define ame_mfmacc_d(acc_reg, tr_a, tr_b)       AME_ISSUE(AME_MFMACC_D(acc_reg, tr_a, tr_b))
+#define ame_mfmacc_s_h(acc_reg, tr_a, tr_b)     AME_ISSUE(AME_MFMACC_S_H(acc_reg, tr_a, tr_b))
+#define ame_mfmacc_s_bf16(acc_reg, tr_a, tr_b)  AME_ISSUE(AME_MFMACC_S_BF16(acc_reg, tr_a, tr_b))
+#define ame_mfmacc_d_s(acc_reg, tr_a, tr_b)     AME_ISSUE(AME_MFMACC_D_S(acc_reg, tr_a, tr_b))
+#define ame_mfmacc_h_e4(acc_reg, tr_a, tr_b)    AME_ISSUE(AME_MFMACC_H_E4(acc_reg, tr_a, tr_b))
+#define ame_mfmacc_h_e5(acc_reg, tr_a, tr_b)    AME_ISSUE(AME_MFMACC_H_E5(acc_reg, tr_a, tr_b))
+#define ame_mfmacc_bf16_e4(acc_reg, tr_a, tr_b) AME_ISSUE(AME_MFMACC_BF16_E4(acc_reg, tr_a, tr_b))
+#define ame_mfmacc_bf16_e5(acc_reg, tr_a, tr_b) AME_ISSUE(AME_MFMACC_BF16_E5(acc_reg, tr_a, tr_b))
+#define ame_mfmacc_s_e4(acc_reg, tr_a, tr_b)    AME_ISSUE(AME_MFMACC_S_E4(acc_reg, tr_a, tr_b))
+#define ame_mfmacc_s_e5(acc_reg, tr_a, tr_b)    AME_ISSUE(AME_MFMACC_S_E5(acc_reg, tr_a, tr_b))
 
 // Fence: hardware-blocking wait for all AME operations to complete.
 // The RoCC interface stalls the CPU pipeline until all micro-instruction
@@ -300,5 +430,13 @@ static inline uint64_t ame_status(void) {
 uint64_t ame_is_idle()
 {
     return ame_status();
+}
+
+// Bulk-copy `length` bytes from DRAM at `src` into TCM at `dst` via the
+// TcmDmaEngine. `length` must be a multiple of 64 (the DMA block size).
+// Blocking: the RoCC holds io.cmd.ready low until the transfer finishes.
+static inline void ame_dma_load(uint64_t src, uint64_t dst, uint32_t length) {
+    uint64_t rs2 = (dst << 32) | (uint64_t)length;
+    AME_ISSUE_WITH_GPR(AME_DMA_LOAD_ENC, src, rs2);
 }
 #endif // AME_H
