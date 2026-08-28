@@ -439,4 +439,57 @@ static inline void ame_dma_load(uint64_t src, uint64_t dst, uint32_t length) {
     uint64_t rs2 = (dst << 32) | (uint64_t)length;
     AME_ISSUE_WITH_GPR(AME_DMA_LOAD_ENC, src, rs2);
 }
+
+// ============================================================
+// TCM partition control (Step 2A)
+//
+// Software runtime-configurable split between L2 cache and TCM scratchpad.
+// Under grow-from-top convention, TCM offset 0 always maps to the highest
+// physical way; larger offsets descend way indices. Shrinking TCM cuts
+// the top of the aperture and preserves data at lower offsets. Growing
+// TCM (fewer cache ways) requires the caller to have flushed any dirty
+// cache lines in the target ways beforehand (fence + wbinvd equivalent).
+// Legal way counts on Step 2A: {0, 1, 2, 4}. Value 8 (all-TCM) is
+// currently rejected in HW.
+// ============================================================
+#define TCM_CTRL_BASE     0x22000000ULL
+#define TCM_MODE_ADDR     (TCM_CTRL_BASE + 0x00)  // RW: target/current count
+#define TCM_STATUS_ADDR   (TCM_CTRL_BASE + 0x04)  // RO: [0]=busy, [1]=illegal
+#define TCM_MASK_ADDR     (TCM_CTRL_BASE + 0x08)  // RO: current way mask
+#define TCM_INFO_ADDR     (TCM_CTRL_BASE + 0x0C)  // RO: L2 geometry
+
+#define TCM_STATUS_BUSY    0x1u
+#define TCM_STATUS_ILLEGAL 0x2u
+
+static inline uint32_t ame_tcm_get_count(void) {
+    return *(volatile uint32_t*)TCM_MODE_ADDR & 0xFu;
+}
+static inline uint32_t ame_tcm_get_mask(void) {
+    return *(volatile uint32_t*)TCM_MASK_ADDR & 0xFFu;
+}
+static inline uint32_t ame_tcm_get_status(void) {
+    return *(volatile uint32_t*)TCM_STATUS_ADDR;
+}
+static inline uint32_t ame_tcm_get_info(void) {
+    return *(volatile uint32_t*)TCM_INFO_ADDR;
+}
+
+// Block until any in-flight partition change finishes.
+static inline void ame_tcm_wait_idle(void) {
+    while (ame_tcm_get_status() & TCM_STATUS_BUSY) { /* spin */ }
+}
+
+// Atomically switch the TCM partition. `count` must be one of {0, 1, 2, 4}.
+// Returns 0 on success, negative on illegal value.
+// Blocks until the transition is committed.
+static inline int ame_tcm_config(uint32_t count) {
+    ame_tcm_wait_idle();
+    *(volatile uint32_t*)TCM_MODE_ADDR = count;
+    asm volatile("fence rw, rw" ::: "memory");
+    ame_tcm_wait_idle();
+    uint32_t st = ame_tcm_get_status();
+    if (st & TCM_STATUS_ILLEGAL) return -1;
+    if (ame_tcm_get_count() != count) return -2;
+    return 0;
+}
 #endif // AME_H

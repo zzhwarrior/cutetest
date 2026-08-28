@@ -18,7 +18,7 @@
 #define TILES_M        (APPLICATION_M / TILE_M)   // 2
 #define TILES_N        (APPLICATION_N / TILE_N)   // 2
 #define TILES_K        (APPLICATION_K / TILE_K)   // 2
-#define C_BASE_ADDR 0x83000000UL
+#define C_BASE_ADDR 0x81100000UL
 // Row width MUST equal APPLICATION_N so &c[i][j] steps by APPLICATION_N*4
 // bytes per row, matching the c_stride used by ame_msce32. The old [256]
 // value here was a 256x256 leftover — it silently miscomputed &c[i][*] for
@@ -36,8 +36,31 @@ int main(void) {
 
     printf("a base: %p (expected 0x81040000 for TCM build)\n", (void *)a);
     printf("b base: %p (expected 0x81000000 for TCM build)\n", (void *)b);
-    printf("c base: %p (expected 0x83000000)\n", (void *)c);
+    printf("c base: %p (expected 0x81100000)\n", (void *)c);
     printf("init done\n");
+
+    // ---- TCM partition control ---------------------------------------------
+    // A (256 KiB) and B (256 KiB) live inside the TCM aperture. C (1 MiB) may
+    // or may not — depends on the config's way_bytes:
+    //   * testL2   (sets=4096, way_bytes=256 KiB): 4-way TCM = 1 MiB. C at
+    //     0x81100000 falls OUTSIDE the aperture and is served by cache/DRAM.
+    //   * testL2Dma (sets=8192, way_bytes=512 KiB): 4-way TCM = 2 MiB. C at
+    //     0x81100000 falls INSIDE the aperture, in ways ways-3 and ways-4.
+    // Either way, A and B live in the top way (way 7 under grow-from-top).
+    // Ensuring count=4 up front satisfies both configs.
+    {
+        uint32_t info = ame_tcm_get_info();
+        printf("TCM info: ways=%u log2sets=%u log2blk=%u\n",
+               info & 0xF, (info >> 8) & 0xFF, (info >> 16) & 0xFF);
+        printf("TCM initial: count=%u mask=0x%02x\n",
+               ame_tcm_get_count(), ame_tcm_get_mask());
+        if (ame_tcm_config(4) != 0) {
+            printf("FAIL: could not configure TCM to 4 ways\n");
+            return 1;
+        }
+        printf("TCM configured: count=4 (2 MiB) — matmul can run\n");
+    }
+
     uint64_t cycle_start, cycle_end;
     
 
@@ -121,5 +144,50 @@ int main(void) {
     } else {
         printf("FAIL! %d mismatches.\n", errors);
     }
+
+    // ---- Demonstrate a safe TCM shrink after the workload ----------------
+    // Under grow-from-top mapping, B (offset 0x00000..0x40000) and A
+    // (0x40000..0x80000) both live in the top TCM way (way ways-1). Any
+    // shrink to count >= 1 preserves them. We snapshot 8 bytes of B, shrink
+    // to count=2, and confirm the sample survives.
+    // (C may or may not have been in TCM depending on the config; either
+    // way we've already read it back for verification, so we don't need it
+    // preserved across the shrink.)
+    {
+        // Snapshot a few B bytes BEFORE the transition so we can compare.
+        volatile int8_t *bp = (volatile int8_t *)0x81000000UL;
+        int8_t b_sample[8];
+        for (int i = 0; i < 8; i++) b_sample[i] = bp[i];
+
+        if (ame_tcm_config(2) != 0) {
+            printf("FAIL: could not shrink TCM to 2 ways\n");
+            return 1;
+        }
+        printf("TCM shrunk: count=%u mask=0x%02x\n",
+               ame_tcm_get_count(), ame_tcm_get_mask());
+
+        // Verify B survived. Under grow-from-top, offset 0..512K stays in
+        // way 7 regardless of count (as long as count >= 1).
+        int b_errors = 0;
+        for (int i = 0; i < 8; i++) {
+            if (bp[i] != b_sample[i]) {
+                if (b_errors < 4) {
+                    printf("  B mismatch @ +%d: expected 0x%02x, got 0x%02x\n",
+                           i, (uint8_t)b_sample[i], (uint8_t)bp[i]);
+                }
+                b_errors++;
+            }
+        }
+        if (b_errors == 0) {
+            printf("TCM shrink preserved B (spot-checked 8 bytes)\n");
+        } else {
+            printf("FAIL: TCM shrink lost B data\n");
+            return 1;
+        }
+
+        // Restore the pre-workload partition for a clean exit.
+        (void)ame_tcm_config(4);
+    }
+
     return 0;
 }

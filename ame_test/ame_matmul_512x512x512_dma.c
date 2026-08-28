@@ -29,10 +29,11 @@
 // TCM layout for this test:
 //   0x81000000 : b[512][512]  (256 KB)
 //   0x81040000 : a[512][512]  (256 KB)  — offset by |b|
-// Output C stays in DRAM.
+// Output C: back in TCM to reproduce the mt>=1 mismatch.
 #define TCM_B_ADDR   0x81000000UL
 #define TCM_A_ADDR   0x81040000UL
-#define C_BASE_ADDR  0x83000000UL
+#define C_BASE_ADDR  0x81100000UL
+
 
 // Row width MUST match APPLICATION_N so &c[i][j] steps by 512*4 bytes per
 // row, matching the c_stride used by the AME store. The original
@@ -50,6 +51,29 @@ static inline uint64_t rd_cycle(void) {
 }
 
 int main(void) {
+    // ---- TCM partition control ---------------------------------------------
+    // This workload places A (256 KiB), B (256 KiB), and C (1 MiB) inside
+    // the TCM aperture. Under way_bytes=512KiB and grow-from-top mapping:
+    //   * offset 0x000000..0x080000 -> way (ways-1)  -- holds B (+ part of A)
+    //   * offset 0x080000..0x100000 -> way (ways-2)  -- (unused gap)
+    //   * offset 0x100000..0x180000 -> way (ways-3)  -- holds C[0..511, 0..255]
+    //   * offset 0x180000..0x200000 -> way (ways-4)  -- holds C[0..511, 256..511]
+    // So the full 4-way (2 MiB) TCM is required to run the kernel. After the
+    // kernel completes and C has been read out, we demonstrate a safe shrink
+    // to 2 ways: B and A live in the top 512 KiB of the aperture and survive
+    // that transition, so subsequent work can still read them.
+    {
+        uint32_t info = ame_tcm_get_info();
+        printf("TCM info: ways=%u log2sets=%u log2blk=%u\n",
+               info & 0xF, (info >> 8) & 0xFF, (info >> 16) & 0xFF);
+        printf("TCM initial: count=%u mask=0x%02x\n",
+               ame_tcm_get_count(), ame_tcm_get_mask());
+        if (ame_tcm_config(4) != 0) {
+            printf("FAIL: could not configure TCM to 4 ways\n");
+            return 1;
+        }
+        printf("TCM configured: count=4 (2 MiB) — matmul can run\n");
+    }
     printf("AME DMA Matmul: %dx%dx%d INT8 (a,b staged from DRAM via DMA)\n",
            APPLICATION_M, APPLICATION_N, APPLICATION_K);
     printf("DRAM src   : a=%p  b=%p\n", (void *)a,     (void *)b);
@@ -157,6 +181,14 @@ int main(void) {
     int errors = 0;
     for (int i = 0; i < APPLICATION_M; i++) {
         for (int j = 0; j < 10; j++) {
+            if (c[i][j] != c_ref[i][j]) {
+                if (errors < 10)
+                    printf("MISMATCH C[%d][%d]: got %d, expected %d\n",
+                           i, j, c[i][j], c_ref[i][j]);
+                errors++;
+            }
+        }
+        for (int j = 128; j < 138; j++) {
             if (c[i][j] != c_ref[i][j]) {
                 if (errors < 10)
                     printf("MISMATCH C[%d][%d]: got %d, expected %d\n",
