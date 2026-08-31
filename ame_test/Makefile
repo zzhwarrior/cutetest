@@ -25,7 +25,7 @@ libgloss_specs := htif_nano.specs
 CFLAGS += -specs=$(libgloss_specs)
 LDFLAGS += -specs=$(libgloss_specs)
 
-PROGRAMS =ame_matmul_128x128x64 ame_matmul_256x256x128 ame_matmul_512x512x512 ame_matmul_512x512x512_dma test l2_test dma_tcm_smoke dma_tcm_ame_test dma_tcm_roundtrip saturn_tcm_test tcm_pingpong_skel tcm_partition_smoke
+PROGRAMS =ame_matmul_128x128x64 ame_matmul_256x256x128 ame_matmul_512x512x512 ame_matmul_512x512x512_dma ame_matmul_mc_512x512x512_dma mt_hello mc_tcm_rw_smoke mc_ame_store_smoke test l2_test dma_tcm_smoke dma_tcm_ame_test dma_tcm_roundtrip saturn_tcm_test tcm_pingpong_skel tcm_partition_smoke
 
 .DEFAULT_GOAL := default
 

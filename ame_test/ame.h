@@ -451,27 +451,40 @@ static inline void ame_dma_load(uint64_t src, uint64_t dst, uint32_t length) {
 // cache lines in the target ways beforehand (fence + wbinvd equivalent).
 // Legal way counts on Step 2A: {0, 1, 2, 4}. Value 8 (all-TCM) is
 // currently rejected in HW.
+//
+// Per-tile layout: each tile's private L2 exposes its TcmCtrl regmap in a
+// distinct 4 KB PBUS window (WithHuanCunL2 offsets tile N's base by
+// N * 0x1000). Helper functions read mhartid at call time to hit the
+// window owned by the current hart. Single-tile configs (hartid=0) are
+// unaffected.
 // ============================================================
-#define TCM_CTRL_BASE     0x22000000ULL
-#define TCM_MODE_ADDR     (TCM_CTRL_BASE + 0x00)  // RW: target/current count
-#define TCM_STATUS_ADDR   (TCM_CTRL_BASE + 0x04)  // RO: [0]=busy, [1]=illegal
-#define TCM_MASK_ADDR     (TCM_CTRL_BASE + 0x08)  // RO: current way mask
-#define TCM_INFO_ADDR     (TCM_CTRL_BASE + 0x0C)  // RO: L2 geometry
+#define TCM_CTRL_BASE_TILE0  0x22000000ULL
+#define TCM_CTRL_WINDOW      0x1000ULL
+#define TCM_MODE_OFFSET      0x00
+#define TCM_STATUS_OFFSET    0x04
+#define TCM_MASK_OFFSET      0x08
+#define TCM_INFO_OFFSET      0x0C
 
 #define TCM_STATUS_BUSY    0x1u
 #define TCM_STATUS_ILLEGAL 0x2u
 
+static inline uint64_t ame_tcm_ctrl_base(void) {
+    uint64_t hid;
+    __asm__ __volatile__("csrr %0, mhartid" : "=r"(hid));
+    return TCM_CTRL_BASE_TILE0 + hid * TCM_CTRL_WINDOW;
+}
+
 static inline uint32_t ame_tcm_get_count(void) {
-    return *(volatile uint32_t*)TCM_MODE_ADDR & 0xFu;
+    return *(volatile uint32_t*)(ame_tcm_ctrl_base() + TCM_MODE_OFFSET) & 0xFu;
 }
 static inline uint32_t ame_tcm_get_mask(void) {
-    return *(volatile uint32_t*)TCM_MASK_ADDR & 0xFFu;
+    return *(volatile uint32_t*)(ame_tcm_ctrl_base() + TCM_MASK_OFFSET) & 0xFFu;
 }
 static inline uint32_t ame_tcm_get_status(void) {
-    return *(volatile uint32_t*)TCM_STATUS_ADDR;
+    return *(volatile uint32_t*)(ame_tcm_ctrl_base() + TCM_STATUS_OFFSET);
 }
 static inline uint32_t ame_tcm_get_info(void) {
-    return *(volatile uint32_t*)TCM_INFO_ADDR;
+    return *(volatile uint32_t*)(ame_tcm_ctrl_base() + TCM_INFO_OFFSET);
 }
 
 // Block until any in-flight partition change finishes.
@@ -483,8 +496,9 @@ static inline void ame_tcm_wait_idle(void) {
 // Returns 0 on success, negative on illegal value.
 // Blocks until the transition is committed.
 static inline int ame_tcm_config(uint32_t count) {
+    uint64_t base = ame_tcm_ctrl_base();
     ame_tcm_wait_idle();
-    *(volatile uint32_t*)TCM_MODE_ADDR = count;
+    *(volatile uint32_t*)(base + TCM_MODE_OFFSET) = count;
     asm volatile("fence rw, rw" ::: "memory");
     ame_tcm_wait_idle();
     uint32_t st = ame_tcm_get_status();

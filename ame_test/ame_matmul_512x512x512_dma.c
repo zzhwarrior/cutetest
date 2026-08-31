@@ -64,21 +64,13 @@ int main(void) {
     // that transition, so subsequent work can still read them.
     {
         uint32_t info = ame_tcm_get_info();
-        printf("TCM info: ways=%u log2sets=%u log2blk=%u\n",
-               info & 0xF, (info >> 8) & 0xFF, (info >> 16) & 0xFF);
         printf("TCM initial: count=%u mask=0x%02x\n",
                ame_tcm_get_count(), ame_tcm_get_mask());
         if (ame_tcm_config(4) != 0) {
             printf("FAIL: could not configure TCM to 4 ways\n");
             return 1;
         }
-        printf("TCM configured: count=4 (2 MiB) — matmul can run\n");
     }
-    printf("AME DMA Matmul: %dx%dx%d INT8 (a,b staged from DRAM via DMA)\n",
-           APPLICATION_M, APPLICATION_N, APPLICATION_K);
-    printf("DRAM src   : a=%p  b=%p\n", (void *)a,     (void *)b);
-    printf("TCM  dst   : a=%p  b=%p\n", (void *)a_tcm, (void *)b_tcm);
-    printf("C output   : c=%p\n",       (void *)c);
 
     // Sanity: each matrix must fit in the DMA length field (32 bit) and be a
     // multiple of the 64-byte DMA block size. 512*512 = 262144 bytes = 0x40000.
@@ -136,7 +128,7 @@ int main(void) {
         for (int nt = 0; nt < TILES_N; nt++) {
             uint64_t c_base = (uint64_t)&c[mt * TILE_M][nt * TILE_N];
             if (acct == 0) {
-                ame_mzero(ACC0);
+                //ame_mzero(ACC0);
                 for (int kt = 0; kt < TILES_K; kt++) {
                     int cur = kt & 1;
                     if (cur == 0) {
@@ -152,7 +144,7 @@ int main(void) {
                 ame_msce32(ACC0, c_base, c_stride);
                 acct++;
             } else {
-                ame_mzero(ACC1);
+                //ame_mzero(ACC1);
                 for (int kt = 0; kt < TILES_K; kt++) {
                     int cur = kt & 1;
                     if (cur == 0) {
