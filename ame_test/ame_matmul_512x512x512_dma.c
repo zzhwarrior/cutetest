@@ -128,7 +128,7 @@ int main(void) {
         for (int nt = 0; nt < TILES_N; nt++) {
             uint64_t c_base = (uint64_t)&c[mt * TILE_M][nt * TILE_N];
             if (acct == 0) {
-                //ame_mzero(ACC0);
+                ame_mzero(ACC0);
                 for (int kt = 0; kt < TILES_K; kt++) {
                     int cur = kt & 1;
                     if (cur == 0) {
@@ -144,7 +144,7 @@ int main(void) {
                 ame_msce32(ACC0, c_base, c_stride);
                 acct++;
             } else {
-                //ame_mzero(ACC1);
+                ame_mzero(ACC1);
                 for (int kt = 0; kt < TILES_K; kt++) {
                     int cur = kt & 1;
                     if (cur == 0) {

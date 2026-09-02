@@ -206,15 +206,26 @@
 
 // Issue AME instruction that reads rs1 and rs2 from GPR (for load/store/config)
 // We put base_addr in t1 (x6) and stride in t2 (x7), matching rs1=6, rs2=7 in encoding
+// Workaround for a Shuttle-side RoCC dispatch bug: when the compiler emits
+// LUI + ALU + ALU directly into t1 (or t2) as the operand computation for a
+// RoCC instruction, Shuttle's fusion/rename path reads a stale rs1 that skips
+// the middle ALU. Symptom: mlbe4 kt=1 dispatched with rs1=0x10201040 (= LUI +
+// ADDI, missing SLLI) instead of 0x81008040, causing BML to fetch an invalid
+// address and hang.
+//
+// Fix: let the compiler compute val_rs1/val_rs2 into any scratch register
+// (via the "r" input constraint), then explicitly `mv` into t1/t2 as the
+// last writer before the RoCC dispatch. This guarantees t1's most recent
+// writer is a single `mv` — no LUI+X fusion pattern for Shuttle to trip on.
 #define AME_ISSUE_WITH_GPR(encoding, val_rs1, val_rs2) \
     do { \
-        register uint64_t _rs1 __asm__("t1") = (uint64_t)(val_rs1); \
-        register uint64_t _rs2 __asm__("t2") = (uint64_t)(val_rs2); \
         __asm__ __volatile__( \
+            "mv t1, %0\n\t" \
+            "mv t2, %1\n\t" \
             ".word " GET_VALUE(encoding) "\n\t" \
             : \
-            : "r"(_rs1), "r"(_rs2) \
-            : "memory" \
+            : "r"((uint64_t)(val_rs1)), "r"((uint64_t)(val_rs2)) \
+            : "t1", "t2", "memory" \
         ); \
     } while(0)
 
@@ -410,8 +421,16 @@ static inline void ame_release(void) {
 // Fence: hardware-blocking wait for all AME operations to complete.
 // The RoCC interface stalls the CPU pipeline until all micro-instruction
 // FIFOs are empty and all operations have finished.
+//
+// AME_FENCE_M_ENC has rd=t0/xd=1 in its RoCC encoding, so the fence returns
+// a value into t0 (the return is effectively unused, always 0). We must list
+// `t0` in the clobber set — otherwise the compiler treats t0 as preserved
+// across ame_fence() and can pre-compute long-lived values into t0 that
+// silently become 0 after the fence retires. Symptom seen in Phase E-small:
+// only tiles where the compiler happened to allocate scale-base to t0 got
+// MSET_SCALEB rs1=0 after crossing a fence.
 static inline void ame_fence(void) {
-    __asm__ __volatile__(".word " GET_VALUE(AME_FENCE_M_ENC) "\n\t" ::: "memory");
+    __asm__ __volatile__(".word " GET_VALUE(AME_FENCE_M_ENC) "\n\t" ::: "t0", "memory");
 }
 
 static inline uint64_t ame_status(void) {
